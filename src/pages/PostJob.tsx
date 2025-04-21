@@ -23,7 +23,7 @@ const PostJob = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, this would submit the job post
-    navigate("/confirmation");
+    navigate("/job-confirmation");
   };
   
   const nextStep = () => {

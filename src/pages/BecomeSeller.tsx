@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,7 @@ const BecomeSeller = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, this would submit the seller registration
-    navigate("/confirmation");
+    navigate("/seller-confirmation");
   };
   
   const nextStep = () => {
