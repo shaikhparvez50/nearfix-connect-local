@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -55,7 +54,7 @@ const Navbar = () => {
             </Button>
           </Link>
           
-          <Link to="/login">
+          <Link to="/signin">
             <Button variant="ghost" size="icon" className="hidden md:inline-flex">
               <User className="h-5 w-5" />
             </Button>
@@ -72,7 +71,6 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Mobile menu */}
       {isMenuOpen && (
         <div className="absolute top-16 inset-x-0 bg-white shadow-lg rounded-b-lg md:hidden">
           <div className="container mx-auto px-4 py-3 space-y-3">
@@ -120,7 +118,7 @@ const Navbar = () => {
                   Post a Job
                 </Button>
               </Link>
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+              <Link to="/signin" onClick={() => setIsMenuOpen(false)}>
                 <Button variant="secondary" className="w-full justify-start">
                   <User className="h-4 w-4 mr-2" />
                   Login / Sign Up
