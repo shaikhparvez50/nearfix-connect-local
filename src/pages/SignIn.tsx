@@ -51,10 +51,10 @@ const SignIn = () => {
     e.preventDefault();
     
     // Validate OTP
-    if (!otp || otp.length !== 6) {
+    if (!otp || otp.length !== 4) {
       toast({
         title: "Invalid OTP",
-        description: "Please enter a valid 6-digit verification code.",
+        description: "Please enter a valid 4-digit verification code.",
         variant: "destructive",
       });
       return;
@@ -136,18 +136,16 @@ const SignIn = () => {
                 <div className="space-y-2">
                   <Label htmlFor="otp">Enter Verification Code</Label>
                   <p className="text-sm text-gray-500 mb-4">
-                    We've sent a 6-digit code to {email}
+                    We've sent a 4-digit code to {email}
                   </p>
                   
                   <div className="flex justify-center">
-                    <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                    <InputOTP maxLength={4} value={otp} onChange={setOtp}>
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
                         <InputOTPSlot index={1} />
                         <InputOTPSlot index={2} />
                         <InputOTPSlot index={3} />
-                        <InputOTPSlot index={4} />
-                        <InputOTPSlot index={5} />
                       </InputOTPGroup>
                     </InputOTP>
                   </div>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,10 +81,10 @@ const SignUp = () => {
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.otp || formData.otp.length !== 6) {
+    if (!formData.otp || formData.otp.length !== 4) {
       toast({
         title: "Invalid OTP",
-        description: "Please enter a valid 6-digit verification code.",
+        description: "Please enter a valid 4-digit verification code.",
         variant: "destructive",
       });
       return;
@@ -176,18 +177,16 @@ const SignUp = () => {
             <div className="space-y-2">
               <Label htmlFor="otp">Enter Verification Code</Label>
               <p className="text-sm text-gray-500 mb-4">
-                We've sent a 6-digit code to {formData.email}
+                We've sent a 4-digit code to {formData.email}
               </p>
               
               <div className="flex justify-center">
-                <InputOTP maxLength={6} value={formData.otp} onChange={handleOtpChange}>
+                <InputOTP maxLength={4} value={formData.otp} onChange={handleOtpChange}>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
                     <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
                   </InputOTPGroup>
                 </InputOTP>
               </div>

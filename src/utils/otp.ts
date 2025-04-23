@@ -1,9 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Generates a 6-digit random OTP
+// Generates a 4-digit random OTP
 export function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
 // Sends OTP: stores it in Supabase 'otp_verification' table
