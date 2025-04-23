@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { useToast } from "@/components/ui/use-toast";
-import { Eye, EyeOff, LogIn, Mail } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { LogIn, Mail } from "lucide-react";
 import { sendOTP, verifyOTP } from "@/utils/otp";
 
 const SignIn = () => {
@@ -60,7 +60,7 @@ const SignIn = () => {
       return;
     }
     
-    // Actually verify the OTP against DB
+    // Verify the OTP against DB
     const isValid = await verifyOTP(email, otp);
     if (!isValid) {
       toast({

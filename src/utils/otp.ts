@@ -13,13 +13,11 @@ export async function sendOTP(email: string) {
 
   const { error } = await supabase
     .from("otp_verification")
-    .insert([
-      {
-        email,
-        otp,
-        expires_at: expiresAt.toISOString(),
-      },
-    ]);
+    .insert({
+      email,
+      otp,
+      expires_at: expiresAt.toISOString(),
+    });
 
   if (error) throw new Error("Could not send OTP. Try again.");
 
@@ -30,16 +28,16 @@ export async function sendOTP(email: string) {
 }
 
 // Verifies OTP by checking against Supabase
-export async function verifyOTP(email: string, otp: string) {
+export async function verifyOTP(email: string, otp: string): Promise<boolean> {
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("otp_verification")
-    .select("*")
+    .select()
     .eq("email", email)
     .eq("otp", otp)
     .eq("verified", false)
-    .lte("expires_at", new Date(Date.now() + 1 * 60 * 1000).toISOString()) // allow up to 1 minute after expiry for clock drift
+    .lte("expires_at", new Date(Date.now() + 1 * 60 * 1000).toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();

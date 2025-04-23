@@ -27,26 +27,26 @@ export type Database = {
       otp_verification: {
         Row: {
           created_at: string
+          email: string
           expires_at: string
           id: string
           otp: string
-          phone_number: string
           verified: boolean
         }
         Insert: {
           created_at?: string
+          email: string
           expires_at: string
           id?: string
           otp: string
-          phone_number: string
           verified?: boolean
         }
         Update: {
           created_at?: string
+          email?: string
           expires_at?: string
           id?: string
           otp?: string
-          phone_number?: string
           verified?: boolean
         }
         Relationships: []
@@ -56,9 +56,9 @@ export type Database = {
           address: string | null
           city: string | null
           created_at: string
+          email: string
           id: string
           name: string | null
-          phone_number: string
           pincode: string | null
           role: string
           updated_at: string
@@ -67,9 +67,9 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          email: string
           id?: string
           name?: string | null
-          phone_number: string
           pincode?: string | null
           role?: string
           updated_at?: string
@@ -78,9 +78,9 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          email?: string
           id?: string
           name?: string | null
-          phone_number?: string
           pincode?: string | null
           role?: string
           updated_at?: string
