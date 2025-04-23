@@ -7,7 +7,7 @@ export function generateOTP(): string {
 }
 
 // Sends OTP: stores it in Supabase 'otp_verification' table
-export async function sendOTP(phoneNumber: string) {
+export async function sendOTP(email: string) {
   const otp = generateOTP();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
@@ -15,7 +15,7 @@ export async function sendOTP(phoneNumber: string) {
     .from("otp_verification")
     .insert([
       {
-        phone_number: phoneNumber,
+        email,
         otp,
         expires_at: expiresAt.toISOString(),
       },
@@ -23,20 +23,20 @@ export async function sendOTP(phoneNumber: string) {
 
   if (error) throw new Error("Could not send OTP. Try again.");
 
-  // In real app, send SMS here. For demo, just log OTP.
-  console.log(`OTP for ${phoneNumber}: ${otp}`);
+  // In real app, send Email OTP here. For demo, just log OTP.
+  console.log(`OTP for ${email}: ${otp}`);
 
   return otp;
 }
 
 // Verifies OTP by checking against Supabase
-export async function verifyOTP(phoneNumber: string, otp: string) {
+export async function verifyOTP(email: string, otp: string) {
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("otp_verification")
     .select("*")
-    .eq("phone_number", phoneNumber)
+    .eq("email", email)
     .eq("otp", otp)
     .eq("verified", false)
     .lte("expires_at", new Date(Date.now() + 1 * 60 * 1000).toISOString()) // allow up to 1 minute after expiry for clock drift

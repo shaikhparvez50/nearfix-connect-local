@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,12 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/components/ui/use-toast";
-import { Eye, EyeOff, LogIn, Phone } from "lucide-react";
+import { Eye, EyeOff, LogIn, Mail } from "lucide-react";
 import { sendOTP, verifyOTP } from "@/utils/otp";
 
 const SignIn = () => {
   const [step, setStep] = useState(1);
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -19,21 +20,22 @@ const SignIn = () => {
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate phone number
-    if (!phoneNumber || phoneNumber.length !== 10) {
+    // Validate email
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!email || !emailRegex.test(email)) {
       toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid 10-digit phone number.",
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
         variant: "destructive",
       });
       return;
     }
     
     try {
-      await sendOTP(phoneNumber);
+      await sendOTP(email);
       toast({
         title: "OTP Sent!",
-        description: "A verification code has been sent to your phone.",
+        description: "A verification code has been sent to your email.",
       });
       setStep(2);
     } catch (err: any) {
@@ -59,7 +61,7 @@ const SignIn = () => {
     }
     
     // Actually verify the OTP against DB
-    const isValid = await verifyOTP(phoneNumber, otp);
+    const isValid = await verifyOTP(email, otp);
     if (!isValid) {
       toast({
         title: "OTP Incorrect or Expired",
@@ -103,18 +105,18 @@ const SignIn = () => {
             {step === 1 ? (
               <form onSubmit={handleSendOTP} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Mobile Number</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
                     <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="Enter 10-digit mobile number"
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email address"
                       className="pl-10"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                     />
-                    <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   </div>
                 </div>
                 
@@ -134,7 +136,7 @@ const SignIn = () => {
                 <div className="space-y-2">
                   <Label htmlFor="otp">Enter Verification Code</Label>
                   <p className="text-sm text-gray-500 mb-4">
-                    We've sent a 6-digit code to +91 {phoneNumber}
+                    We've sent a 6-digit code to {email}
                   </p>
                   
                   <div className="flex justify-center">
@@ -162,7 +164,7 @@ const SignIn = () => {
                     className="w-full"
                     onClick={() => setStep(1)}
                   >
-                    Change Phone Number
+                    Change Email
                   </Button>
                   
                   <Button 

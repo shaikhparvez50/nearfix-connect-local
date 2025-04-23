@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/components/ui/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { MapPin, Phone, User, Upload, UserPlus } from "lucide-react";
+import { MapPin, Mail, User, Upload, UserPlus } from "lucide-react";
 import { sendOTP, verifyOTP } from "@/utils/otp";
 
 const SignUp = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
-    phoneNumber: "",
+    email: "",
     otp: "",
     role: "buyer", // Default role
     address: "",
@@ -50,20 +50,22 @@ const SignUp = () => {
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.phoneNumber || formData.phoneNumber.length !== 10) {
+    // Validate email
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!formData.email || !emailRegex.test(formData.email)) {
       toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid 10-digit phone number.",
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      await sendOTP(formData.phoneNumber);
+      await sendOTP(formData.email);
       toast({
         title: "OTP Sent!",
-        description: "A verification code has been sent to your phone.",
+        description: "A verification code has been sent to your email.",
       });
       setStep(2);
     } catch (err: any) {
@@ -87,7 +89,7 @@ const SignUp = () => {
       return;
     }
 
-    const isValid = await verifyOTP(formData.phoneNumber, formData.otp);
+    const isValid = await verifyOTP(formData.email, formData.otp);
     if (!isValid) {
       toast({
         title: "OTP Incorrect or Expired",
@@ -139,29 +141,19 @@ const SignUp = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Mobile Number</Label>
+              <Label htmlFor="email">Email Address</Label>
               <div className="relative">
                 <Input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  type="tel"
-                  placeholder="Enter 10-digit mobile number"
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email address"
                   className="pl-10"
-                  value={formData.phoneNumber}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                    handleInputChange({
-                      ...e,
-                      target: {
-                        ...e.target,
-                        name: "phoneNumber",
-                        value,
-                      },
-                    });
-                  }}
+                  value={formData.email}
+                  onChange={handleInputChange}
                   required
                 />
-                <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </div>
             
@@ -184,7 +176,7 @@ const SignUp = () => {
             <div className="space-y-2">
               <Label htmlFor="otp">Enter Verification Code</Label>
               <p className="text-sm text-gray-500 mb-4">
-                We've sent a 6-digit code to +91 {formData.phoneNumber}
+                We've sent a 6-digit code to {formData.email}
               </p>
               
               <div className="flex justify-center">
@@ -212,7 +204,7 @@ const SignUp = () => {
                 className="w-full"
                 onClick={() => setStep(1)}
               >
-                Change Phone Number
+                Change Email
               </Button>
               
               <Button 
@@ -359,7 +351,7 @@ const SignUp = () => {
             <CardTitle className="text-2xl font-heading">Join NearFix</CardTitle>
             <CardDescription>
               {step === 1 && "Create an account to get started"}
-              {step === 2 && "Verify your phone number"}
+              {step === 2 && "Verify your email"}
               {step === 3 && "Tell us more about yourself"}
             </CardDescription>
           </CardHeader>
