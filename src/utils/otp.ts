@@ -8,6 +8,12 @@ export function generateOTP(): string {
 
 // Sends OTP: stores it in Supabase 'otp_verification' table
 export async function sendOTP(email: string) {
+  // Validate email format
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    throw new Error("Invalid email format");
+  }
+
   const otp = generateOTP();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
@@ -37,7 +43,7 @@ export async function verifyOTP(email: string, otp: string): Promise<boolean> {
     .eq("email", email)
     .eq("otp", otp)
     .eq("verified", false)
-    .lte("expires_at", new Date(Date.now() + 1 * 60 * 1000).toISOString())
+    .gt("expires_at", now)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
