@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useToast } from "@/components/ui/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { MapPin, Phone, User, Upload, UserPlus } from "lucide-react";
+import { sendOTP, verifyOTP } from "@/utils/otp";
 
 const SignUp = () => {
   const [step, setStep] = useState(1);
@@ -47,42 +47,56 @@ const SignUp = () => {
     });
   };
   
-  const handleSendOTP = (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate phone number
+
     if (!formData.phoneNumber || formData.phoneNumber.length !== 10) {
       toast({
         title: "Invalid phone number",
         description: "Please enter a valid 10-digit phone number.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
-    
-    // In a real app, this would send an OTP via SMS
-    toast({
-      title: "OTP Sent!",
-      description: "A verification code has been sent to your phone.",
-    });
-    
-    setStep(2);
+
+    try {
+      await sendOTP(formData.phoneNumber);
+      toast({
+        title: "OTP Sent!",
+        description: "A verification code has been sent to your phone.",
+      });
+      setStep(2);
+    } catch (err: any) {
+      toast({
+        title: "Failed to send OTP",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
   };
   
-  const handleVerifyOTP = (e: React.FormEvent) => {
+  const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate OTP
+
     if (!formData.otp || formData.otp.length !== 6) {
       toast({
         title: "Invalid OTP",
         description: "Please enter a valid 6-digit verification code.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
-    
-    // Move to next step
+
+    const isValid = await verifyOTP(formData.phoneNumber, formData.otp);
+    if (!isValid) {
+      toast({
+        title: "OTP Incorrect or Expired",
+        description: "Please enter a correct and unexpired code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setStep(3);
   };
   

@@ -24,6 +24,69 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_verification: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          otp: string
+          phone_number: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          otp: string
+          phone_number: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp?: string
+          phone_number?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          id: string
+          name: string | null
+          phone_number: string
+          pincode: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          phone_number: string
+          pincode?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          phone_number?: string
+          pincode?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

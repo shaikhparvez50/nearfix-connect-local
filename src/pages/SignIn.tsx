@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, LogIn, Phone } from "lucide-react";
+import { sendOTP, verifyOTP } from "@/utils/otp";
 
 const SignIn = () => {
   const [step, setStep] = useState(1);
@@ -16,7 +16,7 @@ const SignIn = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleSendOTP = (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate phone number
@@ -24,22 +24,28 @@ const SignIn = () => {
       toast({
         title: "Invalid phone number",
         description: "Please enter a valid 10-digit phone number.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
     
-    // In a real app, this would send an OTP via SMS
-    // For demo, we'll just move to the next step
-    toast({
-      title: "OTP Sent!",
-      description: "A verification code has been sent to your phone.",
-    });
-    
-    setStep(2);
+    try {
+      await sendOTP(phoneNumber);
+      toast({
+        title: "OTP Sent!",
+        description: "A verification code has been sent to your phone.",
+      });
+      setStep(2);
+    } catch (err: any) {
+      toast({
+        title: "Failed to send OTP",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
   };
   
-  const handleVerify = (e: React.FormEvent) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate OTP
@@ -47,13 +53,22 @@ const SignIn = () => {
       toast({
         title: "Invalid OTP",
         description: "Please enter a valid 6-digit verification code.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
     
-    // In a real app, this would verify the OTP with a backend service
-    // For demo, we'll just navigate to the dashboard
+    // Actually verify the OTP against DB
+    const isValid = await verifyOTP(phoneNumber, otp);
+    if (!isValid) {
+      toast({
+        title: "OTP Incorrect or Expired",
+        description: "Please enter a correct and unexpired code.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Login successful!",
       description: "Welcome back to NearFix.",
