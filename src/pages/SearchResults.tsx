@@ -14,86 +14,18 @@ import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-const mockProviders = [
-  {
-    id: 1,
-    name: "Rahul Kumar",
-    avatar: "/placeholder.svg",
-    rating: 4.8,
-    reviews: 36,
-    services: ["Fabrication", "Welding"],
-    location: "Andheri East, Mumbai",
-    coordinates: { lat: 19.116, lng: 72.877 },
-    distance: "2.3 km",
-    verified: true,
-    available: "Today"
-  },
-  {
-    id: 2,
-    name: "Priya Patel",
-    avatar: "/placeholder.svg",
-    rating: 4.9,
-    reviews: 42,
-    services: ["Electrical", "Home Repair"],
-    location: "Bandra West, Mumbai",
-    coordinates: { lat: 19.054, lng: 72.825 },
-    distance: "3.8 km",
-    verified: true,
-    available: "Tomorrow"
-  },
-  {
-    id: 3,
-    name: "Tech Solutions Ltd.",
-    avatar: "/placeholder.svg",
-    rating: 4.6,
-    reviews: 28,
-    services: ["Electrical", "CCTV Installation"],
-    location: "Powai, Mumbai",
-    coordinates: { lat: 19.116, lng: 72.907 },
-    distance: "4.5 km",
-    verified: true,
-    available: "This Week"
-  },
-  {
-    id: 4,
-    name: "Vikram Singh",
-    avatar: "/placeholder.svg",
-    rating: 4.7,
-    reviews: 19,
-    services: ["Plumbing", "Home Repair"],
-    location: "Malad, Mumbai",
-    coordinates: { lat: 19.186, lng: 72.848 },
-    distance: "5.2 km",
-    verified: true,
-    available: "Today"
-  },
-  {
-    id: 5,
-    name: "Perfect Plumbers Co.",
-    avatar: "/placeholder.svg",
-    rating: 4.5,
-    reviews: 31,
-    services: ["Plumbing", "Bathroom Fitting"],
-    location: "Juhu, Mumbai",
-    coordinates: { lat: 19.100, lng: 72.826 },
-    distance: "3.3 km",
-    verified: true,
-    available: "Tomorrow"
-  }
-];
-
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-  return parseFloat(distance.toFixed(1));
+interface Provider {
+  provider_id: string;
+  business_name: string;
+  rating?: number;
+  reviews?: number;
+  service_types: string[];
+  distance: number;
+  address: string;
+  verified?: boolean;
+  available?: string;
 }
 
 const SearchResults = () => {
@@ -112,7 +44,7 @@ const SearchResults = () => {
   const [onlyVerified, setOnlyVerified] = useState(false);
   
   const { userLocation, requestLocationPermission } = useAuth();
-  const [providers, setProviders] = useState([...mockProviders]);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [showLocationAlert, setShowLocationAlert] = useState(false);
   
   useEffect(() => {
@@ -122,27 +54,27 @@ const SearchResults = () => {
       setShowLocationAlert(false);
     }
     
+    const fetchProviders = async () => {
+      if (!userLocation) return;
+      
+      try {
+        const { data, error } = await supabase.rpc('find_nearest_providers', {
+          user_lat: userLocation.latitude,
+          user_lon: userLocation.longitude,
+          limit_count: 10
+        });
+
+        if (error) throw error;
+        
+        setProviders(data || []);
+      } catch (error: any) {
+        console.error('Error fetching providers:', error);
+        toast.error('Failed to load service providers');
+      }
+    };
+
     if (userLocation) {
-      const providersWithDistance = mockProviders.map(provider => {
-        const distance = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          provider.coordinates.lat,
-          provider.coordinates.lng
-        );
-        return {
-          ...provider,
-          distance: `${distance} km`
-        };
-      });
-      
-      providersWithDistance.sort((a, b) => {
-        const distA = parseFloat(a.distance.split(' ')[0]);
-        const distB = parseFloat(b.distance.split(' ')[0]);
-        return distA - distB;
-      });
-      
-      setProviders(providersWithDistance);
+      fetchProviders();
     }
   }, [userLocation, locationParam]);
   
@@ -389,20 +321,20 @@ const SearchResults = () => {
               
               <div className="space-y-4">
                 {providers.map((provider) => (
-                  <Card key={provider.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <Card key={provider.provider_id} className="overflow-hidden hover:shadow-md transition-shadow">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
                         <div className="p-4 md:p-6 flex-grow">
                           <div className="flex items-center gap-4">
                             <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
-                              <AvatarImage src={provider.avatar} alt={provider.name} />
+                              <AvatarImage src="/placeholder.svg" alt={provider.business_name} />
                               <AvatarFallback className="bg-nearfix-100 text-nearfix-700">
-                                {provider.name.split(' ').map(n => n[0]).join('')}
+                                {provider.business_name.split(' ').map(n => n[0]).join('')}
                               </AvatarFallback>
                             </Avatar>
                             <div>
                               <div className="flex items-center gap-2">
-                                <h3 className="font-medium text-lg">{provider.name}</h3>
+                                <h3 className="font-medium text-lg">{provider.business_name}</h3>
                                 {provider.verified && (
                                   <Badge variant="secondary" className="bg-green-50 text-green-700 flex items-center gap-1">
                                     <UserCheck className="h-3 w-3" />
@@ -410,23 +342,27 @@ const SearchResults = () => {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center mt-1">
-                                <div className="flex items-center text-yellow-400 mr-2">
-                                  <Star className="h-4 w-4 fill-yellow-400" />
-                                  <span className="text-sm font-medium text-gray-700 ml-1">
-                                    {provider.rating}
-                                  </span>
+                              {provider.rating && (
+                                <div className="flex items-center mt-1">
+                                  <div className="flex items-center text-yellow-400 mr-2">
+                                    <Star className="h-4 w-4 fill-yellow-400" />
+                                    <span className="text-sm font-medium text-gray-700 ml-1">
+                                      {provider.rating}
+                                    </span>
+                                  </div>
+                                  {provider.reviews && (
+                                    <span className="text-xs text-gray-500">
+                                      ({provider.reviews} reviews)
+                                    </span>
+                                  )}
                                 </div>
-                                <span className="text-xs text-gray-500">
-                                  ({provider.reviews} reviews)
-                                </span>
-                              </div>
+                              )}
                             </div>
                           </div>
                           
                           <div className="mt-4">
                             <div className="flex flex-wrap gap-2 mb-3">
-                              {provider.services.map((service) => (
+                              {provider.service_types.map((service) => (
                                 <Badge key={service} variant="outline" className="bg-nearfix-50 text-nearfix-700 border-none">
                                   {service}
                                 </Badge>
@@ -435,21 +371,23 @@ const SearchResults = () => {
                             
                             <div className="flex items-center text-sm text-gray-600 mb-2">
                               <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                              <span>{provider.location}</span>
+                              <span>{provider.address}</span>
                               <span className="mx-2">•</span>
-                              <span>{provider.distance}</span>
+                              <span>{provider.distance.toFixed(1)} km</span>
                             </div>
                             
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                              <span>Available: {provider.available}</span>
-                            </div>
+                            {provider.available && (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                                <span>Available: {provider.available}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
                         <div className="p-4 md:p-6 md:border-l flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 bg-gray-50">
                           <Button asChild variant="outline">
-                            <a href={`/provider/${provider.id}`}>
+                            <a href={`/provider/${provider.provider_id}`}>
                               View Profile
                             </a>
                           </Button>
