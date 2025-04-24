@@ -1,12 +1,23 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { Plus, Clock, CheckCircle, AlertCircle, MapPin } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertCircle, MapPin, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   // In a real app, this data would come from an API
@@ -40,6 +51,26 @@ const Dashboard = () => {
     }
   ]);
   
+  const { userLocation, requestLocationPermission } = useAuth();
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
+  
+  useEffect(() => {
+    // Show location permission dialog when dashboard loads
+    if (!userLocation) {
+      setShowLocationDialog(true);
+    }
+  }, [userLocation]);
+  
+  const handleLocationRequest = async () => {
+    const success = await requestLocationPermission();
+    setShowLocationDialog(false);
+    
+    if (success) {
+      // In a real app, we would fetch nearby service providers based on location
+      toast.success("We can now show service providers near you");
+    }
+  };
+  
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -66,9 +97,36 @@ const Dashboard = () => {
                 <p className="text-gray-600">
                   Manage your jobs and track responses from service providers
                 </p>
+                
+                {userLocation && (
+                  <div className="mt-2 flex items-center text-sm text-nearfix-600">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span>
+                      {userLocation.address || 
+                        `Lat: ${userLocation.latitude.toFixed(4)}, Long: ${userLocation.longitude.toFixed(4)}`}
+                    </span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={requestLocationPermission} 
+                      className="ml-2 h-7 text-xs"
+                    >
+                      <Navigation className="h-3 w-3 mr-1" /> Update
+                    </Button>
+                  </div>
+                )}
               </div>
               
-              <div className="mt-4 md:mt-0">
+              <div className="mt-4 md:mt-0 flex items-center gap-3">
+                {!userLocation && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowLocationDialog(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <MapPin className="h-4 w-4" /> Set Location
+                  </Button>
+                )}
                 <Button asChild className="bg-nearfix-600 hover:bg-nearfix-700">
                   <Link to="/post-job">
                     <Plus className="mr-2 h-4 w-4" /> Post a New Job
@@ -206,6 +264,25 @@ const Dashboard = () => {
           </div>
         </div>
       </section>
+      
+      <AlertDialog open={showLocationDialog} onOpenChange={setShowLocationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Share your location</AlertDialogTitle>
+            <AlertDialogDescription>
+              Allow NearFix to access your location to find nearby service providers. 
+              This helps us connect you with the most relevant professionals in your area.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not now</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLocationRequest}>
+              <MapPin className="mr-2 h-4 w-4" />
+              Enable location
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

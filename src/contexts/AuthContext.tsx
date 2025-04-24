@@ -3,10 +3,20 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+  address?: string;
+};
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
+  userLocation: Coordinates | null;
+  setUserLocation: (location: Coordinates | null) => void;
+  requestLocationPermission: () => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata: { name: string }) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,6 +27,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +47,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const requestLocationPermission = async (): Promise<boolean> => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return false;
+    }
+    
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+      
+      const { latitude, longitude } = position.coords;
+      
+      // Get address from coordinates using reverse geocoding
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=pk.eyJ1IjoibG92YWJsZS1zYW1wbGUiLCJhIjoiY2x0Z3J3eHN0MDJ1aDJrcGR5ZXYwcHl1dyJ9.ZWFiJXJZfnFxXcUOgDsW-g`
+        );
+        const data = await response.json();
+        const address = data.features?.[0]?.place_name || "Unknown location";
+        
+        setUserLocation({ latitude, longitude, address });
+        toast.success("Location detected successfully");
+        return true;
+      } catch (error) {
+        // If geocoding fails, still set coordinates but without address
+        setUserLocation({ latitude, longitude });
+        toast.success("Location coordinates detected");
+        return true;
+      }
+    } catch (error) {
+      if ((error as GeolocationPositionError).code === 1) {
+        toast.error("Location permission denied");
+      } else {
+        toast.error("Unable to get location");
+      }
+      return false;
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -71,7 +122,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      userLocation, 
+      setUserLocation, 
+      requestLocationPermission, 
+      signIn, 
+      signUp, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,19 +1,20 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { 
   Search, MapPin, Star, Phone, Calendar, Filter, 
-  Check, ChevronDown, ChevronUp, UserCheck
+  Check, ChevronDown, ChevronUp, UserCheck, Navigation
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
-// Mock data for search results
 const mockProviders = [
   {
     id: 1,
@@ -23,6 +24,7 @@ const mockProviders = [
     reviews: 36,
     services: ["Fabrication", "Welding"],
     location: "Andheri East, Mumbai",
+    coordinates: { lat: 19.116, lng: 72.877 },
     distance: "2.3 km",
     verified: true,
     available: "Today"
@@ -35,6 +37,7 @@ const mockProviders = [
     reviews: 42,
     services: ["Electrical", "Home Repair"],
     location: "Bandra West, Mumbai",
+    coordinates: { lat: 19.054, lng: 72.825 },
     distance: "3.8 km",
     verified: true,
     available: "Tomorrow"
@@ -47,6 +50,7 @@ const mockProviders = [
     reviews: 28,
     services: ["Electrical", "CCTV Installation"],
     location: "Powai, Mumbai",
+    coordinates: { lat: 19.116, lng: 72.907 },
     distance: "4.5 km",
     verified: true,
     available: "This Week"
@@ -59,6 +63,7 @@ const mockProviders = [
     reviews: 19,
     services: ["Plumbing", "Home Repair"],
     location: "Malad, Mumbai",
+    coordinates: { lat: 19.186, lng: 72.848 },
     distance: "5.2 km",
     verified: true,
     available: "Today"
@@ -71,11 +76,25 @@ const mockProviders = [
     reviews: 31,
     services: ["Plumbing", "Bathroom Fitting"],
     location: "Juhu, Mumbai",
+    coordinates: { lat: 19.100, lng: 72.826 },
     distance: "3.3 km",
     verified: true,
     available: "Tomorrow"
   }
 ];
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  return parseFloat(distance.toFixed(1));
+}
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -87,11 +106,48 @@ const SearchResults = () => {
   const [maxDistance, setMaxDistance] = useState([10]);
   const [showFilters, setShowFilters] = useState(false);
   
-  // Filter settings
-  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
-  const [selectedProviderType, setSelectedProviderType] = useState<string>('');
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [onlyVerified, setOnlyVerified] = useState(false);
+  const { userLocation, requestLocationPermission } = useAuth();
+  const [providers, setProviders] = useState([...mockProviders]);
+  const [showLocationAlert, setShowLocationAlert] = useState(false);
+  
+  useEffect(() => {
+    if (!userLocation && !locationParam) {
+      setShowLocationAlert(true);
+    } else {
+      setShowLocationAlert(false);
+    }
+    
+    if (userLocation) {
+      const providersWithDistance = mockProviders.map(provider => {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          provider.coordinates.lat,
+          provider.coordinates.lng
+        );
+        return {
+          ...provider,
+          distance: `${distance} km`
+        };
+      });
+      
+      providersWithDistance.sort((a, b) => {
+        const distA = parseFloat(a.distance.split(' ')[0]);
+        const distB = parseFloat(b.distance.split(' ')[0]);
+        return distA - distB;
+      });
+      
+      setProviders(providersWithDistance);
+    }
+  }, [userLocation, locationParam]);
+  
+  const handleLocationRequest = async () => {
+    const success = await requestLocationPermission();
+    if (success) {
+      setShowLocationAlert(false);
+      toast.success("Showing service providers near your location");
+    }
+  };
   
   const toggleServiceType = (type: string) => {
     if (selectedServiceTypes.includes(type)) {
@@ -103,14 +159,12 @@ const SearchResults = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would trigger a search with the updated parameters
   };
 
   return (
     <MainLayout>
       <section className="bg-gray-50 min-h-screen py-8">
         <div className="container mx-auto px-4">
-          {/* Search Header */}
           <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
             <form onSubmit={handleSearch}>
               <div className="flex flex-col md:flex-row gap-3">
@@ -145,9 +199,44 @@ const SearchResults = () => {
             </form>
           </div>
 
-          {/* Main content */}
+          {showLocationAlert && (
+            <Alert className="mb-6 bg-blue-50 border-blue-200">
+              <MapPin className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>Share your location to find service providers near you.</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100"
+                  onClick={handleLocationRequest}
+                >
+                  <Navigation className="mr-2 h-3 w-3" />
+                  Detect My Location
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {userLocation && (
+            <div className="mb-6 flex items-center text-sm">
+              <MapPin className="h-4 w-4 mr-1 text-nearfix-600" />
+              <span className="font-medium">Your location:</span>
+              <span className="ml-2 text-gray-600">
+                {userLocation.address || 
+                  `${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-2 h-7 text-xs text-nearfix-600"
+                onClick={requestLocationPermission}
+              >
+                <Navigation className="h-3 w-3 mr-1" /> Update
+              </Button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Filters sidebar */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="p-4 border-b flex justify-between items-center">
@@ -163,7 +252,6 @@ const SearchResults = () => {
                 </div>
                 
                 <div className={`p-4 space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-                  {/* Distance filter */}
                   <div>
                     <h3 className="font-medium text-sm mb-3">Maximum Distance</h3>
                     <div className="px-2">
@@ -180,7 +268,6 @@ const SearchResults = () => {
                     </div>
                   </div>
                   
-                  {/* Service type filter */}
                   <div>
                     <h3 className="font-medium text-sm mb-3">Service Type</h3>
                     <div className="space-y-2">
@@ -198,7 +285,6 @@ const SearchResults = () => {
                     </div>
                   </div>
                   
-                  {/* Provider type filter */}
                   <div>
                     <h3 className="font-medium text-sm mb-3">Provider Type</h3>
                     <div className="space-y-2">
@@ -238,7 +324,6 @@ const SearchResults = () => {
                     </div>
                   </div>
                   
-                  {/* Rating filter */}
                   <div>
                     <h3 className="font-medium text-sm mb-3">Minimum Rating</h3>
                     <div className="flex items-center space-x-1">
@@ -263,7 +348,6 @@ const SearchResults = () => {
                     </div>
                   </div>
                   
-                  {/* Verified filter */}
                   <div>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -276,7 +360,6 @@ const SearchResults = () => {
                     </label>
                   </div>
                   
-                  {/* Apply filters button (mobile only) */}
                   <Button 
                     className="w-full lg:hidden bg-nearfix-600 hover:bg-nearfix-700"
                     onClick={() => setShowFilters(false)}
@@ -287,22 +370,20 @@ const SearchResults = () => {
               </div>
             </div>
             
-            {/* Results column */}
             <div className="lg:col-span-3">
               <div className="mb-4 flex justify-between items-center">
                 <div>
                   <h2 className="font-heading font-medium text-lg">
-                    {mockProviders.length} Service Providers Found
+                    {providers.length} Service Providers Found
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Showing results for {service || 'All Services'} in {location || 'Your Area'}
+                    Showing results for {service || 'All Services'} in {userLocation?.address || location || 'Your Area'}
                   </p>
                 </div>
               </div>
               
-              {/* Result cards */}
               <div className="space-y-4">
-                {mockProviders.map((provider) => (
+                {providers.map((provider) => (
                   <Card key={provider.id} className="overflow-hidden hover:shadow-md transition-shadow">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
