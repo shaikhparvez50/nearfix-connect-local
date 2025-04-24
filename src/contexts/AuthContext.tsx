@@ -69,6 +69,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         const address = data.features?.[0]?.place_name || "Unknown location";
         
+        // Store location in Supabase
+        const { error } = await supabase
+          .from('geo_locations')
+          .upsert({
+            user_id: user?.id,
+            latitude,
+            longitude,
+            address
+          });
+
+        if (error) throw error;
+        
         setUserLocation({ latitude, longitude, address });
         toast.success("Location detected successfully");
         return true;

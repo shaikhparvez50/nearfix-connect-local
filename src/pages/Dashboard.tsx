@@ -18,9 +18,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 const Dashboard = () => {
-  // In a real app, this data would come from an API
   const [activeJobs, setActiveJobs] = useState([
     {
       id: "job-1",
@@ -51,13 +51,30 @@ const Dashboard = () => {
     }
   ]);
   
+  const [nearbyProviders, setNearbyProviders] = useState<any[]>([]);
+  
   const { userLocation, requestLocationPermission } = useAuth();
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   
   useEffect(() => {
-    // Show location permission dialog when dashboard loads
-    if (!userLocation) {
-      setShowLocationDialog(true);
+    if (userLocation) {
+      const fetchNearbyProviders = async () => {
+        try {
+          const { data, error } = await supabase.rpc('find_nearest_providers', {
+            user_lat: userLocation.latitude,
+            user_lon: userLocation.longitude,
+            limit_count: 3
+          });
+
+          if (error) throw error;
+          setNearbyProviders(data || []);
+        } catch (error: any) {
+          toast.error("Failed to fetch nearby providers");
+          console.error("Error fetching providers:", error);
+        }
+      };
+
+      fetchNearbyProviders();
     }
   }, [userLocation]);
   
@@ -66,7 +83,6 @@ const Dashboard = () => {
     setShowLocationDialog(false);
     
     if (success) {
-      // In a real app, we would fetch nearby service providers based on location
       toast.success("We can now show service providers near you");
     }
   };
@@ -149,6 +165,54 @@ const Dashboard = () => {
               </TabsList>
               
               <TabsContent value="active" className="space-y-6">
+                {!userLocation && (
+                  <div className="mb-6">
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <MapPin className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="flex items-center justify-between">
+                        <span>Share your location to find service providers near you.</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100"
+                          onClick={handleLocationRequest}
+                        >
+                          <MapPin className="mr-2 h-3 w-3" />
+                          Enable Location
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+
+                {userLocation && nearbyProviders.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="font-medium text-lg mb-4">Nearby Service Providers</h3>
+                    <div className="grid gap-4">
+                      {nearbyProviders.map((provider) => (
+                        <Card key={provider.provider_id} className="border-0 shadow-sm">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h4 className="font-medium">{provider.business_name}</h4>
+                                <p className="text-sm text-gray-600">
+                                  {provider.service_types.join(', ')}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {provider.distance.toFixed(1)} km away
+                                </p>
+                              </div>
+                              <Button variant="outline" size="sm">
+                                Contact
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {activeJobs.length > 0 ? (
                   activeJobs.map(job => (
                     <Card key={job.id} className="border-0 shadow-sm">

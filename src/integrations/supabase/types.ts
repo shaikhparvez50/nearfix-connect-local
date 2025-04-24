@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      geo_locations: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_postings: {
         Row: {
           budget: number | null
@@ -162,6 +192,45 @@ export type Database = {
         }
         Relationships: []
       }
+      service_providers: {
+        Row: {
+          availability_schedule: Json | null
+          business_name: string | null
+          created_at: string
+          description: string | null
+          hourly_rate: number | null
+          id: string
+          is_available: boolean
+          service_types: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability_schedule?: Json | null
+          business_name?: string | null
+          created_at?: string
+          description?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean
+          service_types: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability_schedule?: Json | null
+          business_name?: string | null
+          created_at?: string
+          description?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean
+          service_types?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           address: string | null
@@ -173,6 +242,7 @@ export type Database = {
           pincode: string | null
           role: string
           updated_at: string
+          user_role: string | null
         }
         Insert: {
           address?: string | null
@@ -184,6 +254,7 @@ export type Database = {
           pincode?: string | null
           role?: string
           updated_at?: string
+          user_role?: string | null
         }
         Update: {
           address?: string | null
@@ -195,6 +266,7 @@ export type Database = {
           pincode?: string | null
           role?: string
           updated_at?: string
+          user_role?: string | null
         }
         Relationships: []
       }
@@ -203,7 +275,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_distance: {
+        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Returns: number
+      }
+      find_nearest_providers: {
+        Args: { user_lat: number; user_lon: number; limit_count?: number }
+        Returns: {
+          provider_id: string
+          user_id: string
+          business_name: string
+          service_types: string[]
+          description: string
+          hourly_rate: number
+          distance: number
+          latitude: number
+          longitude: number
+          address: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
