@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      job_postings: {
+        Row: {
+          budget: number | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          location: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          location: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       "Near fix": {
         Row: {
           created_at: string
@@ -48,6 +87,78 @@ export type Database = {
           id?: string
           otp?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          pincode: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          pincode?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          pincode?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seller_profiles: {
+        Row: {
+          business_name: string
+          created_at: string
+          description: string | null
+          hourly_rate: number | null
+          id: string
+          is_verified: boolean
+          services: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_name: string
+          created_at?: string
+          description?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_verified?: boolean
+          services: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          description?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_verified?: boolean
+          services?: string[]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
