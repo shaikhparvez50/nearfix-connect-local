@@ -6,52 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { Plus, Clock, CheckCircle, AlertCircle, MapPin, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
-  const [activeJobs, setActiveJobs] = useState([
-    {
-      id: "job-1",
-      title: "Electrical wiring repair",
-      status: "active",
-      date: "2023-04-22",
-      location: "Mumbai, Maharashtra",
-      responses: 3
-    },
-    {
-      id: "job-2",
-      title: "Plumbing fixture installation",
-      status: "active",
-      date: "2023-04-20",
-      location: "Mumbai, Maharashtra",
-      responses: 1
-    }
-  ]);
-  
-  const [completedJobs, setCompletedJobs] = useState([
-    {
-      id: "job-3",
-      title: "Bathroom sink repair",
-      status: "completed",
-      date: "2023-04-10",
-      location: "Mumbai, Maharashtra",
-      responses: 2
-    }
-  ]);
-  
-  const [nearbyProviders, setNearbyProviders] = useState<any[]>([]);
+  const [activeJobs, setActiveJobs] = useState([]);
+  const [completedJobs, setCompletedJobs] = useState([]);
+  const [nearbyProviders, setNearbyProviders] = useState([]);
   
   const { userLocation, requestLocationPermission } = useAuth();
   const [showLocationDialog, setShowLocationDialog] = useState(false);
@@ -77,7 +39,7 @@ const Dashboard = () => {
       fetchNearbyProviders();
     }
   }, [userLocation]);
-  
+
   const handleLocationRequest = async () => {
     const success = await requestLocationPermission();
     setShowLocationDialog(false);
