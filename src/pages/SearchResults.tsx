@@ -106,6 +106,11 @@ const SearchResults = () => {
   const [maxDistance, setMaxDistance] = useState([10]);
   const [showFilters, setShowFilters] = useState(false);
   
+  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
+  const [selectedProviderType, setSelectedProviderType] = useState('');
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [onlyVerified, setOnlyVerified] = useState(false);
+  
   const { userLocation, requestLocationPermission } = useAuth();
   const [providers, setProviders] = useState([...mockProviders]);
   const [showLocationAlert, setShowLocationAlert] = useState(false);
