@@ -18,7 +18,7 @@ type AuthContextType = {
   setUserLocation: (location: Coordinates | null) => void;
   requestLocationPermission: () => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, metadata: { name: string }) => Promise<void>;
+  signUp: (email: string, password: string, metadata: { name: string; role?: string }) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -36,6 +36,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // If user is logged in, redirect to dashboard
+        if (session?.user && window.location.pathname === '/') {
+          navigate('/dashboard');
+        }
       }
     );
 
@@ -43,10 +48,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // If user is logged in and on the homepage, redirect to dashboard
+      if (session?.user && window.location.pathname === '/') {
+        navigate('/dashboard');
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const requestLocationPermission = async (): Promise<boolean> => {
     if (!navigator.geolocation) {
@@ -69,17 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         const address = data.features?.[0]?.place_name || "Unknown location";
         
-        // Store location in Supabase
-        const { error } = await supabase
-          .from('geo_locations')
-          .upsert({
-            user_id: user?.id,
-            latitude,
-            longitude,
-            address
-          });
+        // Store location in Supabase if user is logged in
+        if (user?.id) {
+          const { error } = await supabase
+            .from('geo_locations')
+            .upsert({
+              user_id: user.id,
+              latitude,
+              longitude,
+              address
+            });
 
-        if (error) throw error;
+          if (error) throw error;
+        }
         
         setUserLocation({ latitude, longitude, address });
         toast.success("Location detected successfully");
@@ -111,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, metadata: { name: string }) => {
+  const signUp = async (email: string, password: string, metadata: { name: string; role?: string }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,

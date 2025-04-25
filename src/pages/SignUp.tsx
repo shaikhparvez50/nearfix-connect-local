@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,24 +8,40 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    role: "buyer" as "buyer" | "seller"
   });
   
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp, user } = useAuth();
+  
+  useEffect(() => {
+    // Check if user is already logged in, redirect to dashboard
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+  
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value as "buyer" | "seller"
     }));
   };
   
@@ -43,12 +59,13 @@ const SignUp = () => {
     
     try {
       await signUp(formData.email, formData.password, {
-        name: formData.name
+        name: formData.name,
+        role: formData.role
       });
       
       toast({
         title: "Account created successfully!",
-        description: "Welcome to NearFix. You can now sign in.",
+        description: `Welcome to NearFix as a ${formData.role}. You can now sign in.`,
       });
       
       navigate("/signin");
@@ -148,6 +165,24 @@ const SignUp = () => {
                   />
                   <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>I want to join NearFix as:</Label>
+                <RadioGroup 
+                  value={formData.role} 
+                  onValueChange={handleRoleChange}
+                  className="pt-2"
+                >
+                  <div className="flex items-center space-x-2 mb-3">
+                    <RadioGroupItem value="buyer" id="signup-buyer" />
+                    <Label htmlFor="signup-buyer">Service Buyer (hire professionals)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="seller" id="signup-seller" />
+                    <Label htmlFor="signup-seller">Service Provider (offer services)</Label>
+                  </div>
+                </RadioGroup>
               </div>
               
               <Button type="submit" className="w-full bg-nearfix-600 hover:bg-nearfix-700">

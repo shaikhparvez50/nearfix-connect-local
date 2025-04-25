@@ -9,36 +9,66 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+type Provider = {
+  provider_id: string;
+  user_id: string;
+  business_name: string;
+  service_types: string[];
+  description: string;
+  hourly_rate: number;
+  distance: number;
+  latitude: number;
+  longitude: number;
+  address: string;
+};
 
 const Dashboard = () => {
   const [activeJobs, setActiveJobs] = useState([]);
   const [completedJobs, setCompletedJobs] = useState([]);
-  const [nearbyProviders, setNearbyProviders] = useState([]);
+  const [nearbyProviders, setNearbyProviders] = useState<Provider[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
-  const { userLocation, requestLocationPermission } = useAuth();
+  const { userLocation, requestLocationPermission, user } = useAuth();
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   
   useEffect(() => {
     if (userLocation) {
-      const fetchNearbyProviders = async () => {
-        try {
-          const { data, error } = await supabase.rpc('find_nearest_providers', {
-            user_lat: userLocation.latitude,
-            user_lon: userLocation.longitude,
-            limit_count: 3
-          });
-
-          if (error) throw error;
-          setNearbyProviders(data || []);
-        } catch (error: any) {
-          toast.error("Failed to fetch nearby providers");
-          console.error("Error fetching providers:", error);
-        }
-      };
-
       fetchNearbyProviders();
     }
   }, [userLocation]);
+  
+  const fetchNearbyProviders = async () => {
+    if (!userLocation) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('find_nearest_providers', {
+        user_lat: userLocation.latitude,
+        user_lon: userLocation.longitude,
+        limit_count: 3
+      });
+
+      if (error) throw error;
+      setNearbyProviders(data || []);
+    } catch (error: any) {
+      toast.error("Failed to fetch nearby providers");
+      console.error("Error fetching providers:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLocationRequest = async () => {
     const success = await requestLocationPermission();
@@ -99,7 +129,7 @@ const Dashboard = () => {
                 {!userLocation && (
                   <Button 
                     variant="outline" 
-                    onClick={() => setShowLocationDialog(true)}
+                    onClick={requestLocationPermission}
                     className="flex items-center gap-1"
                   >
                     <MapPin className="h-4 w-4" /> Set Location
@@ -137,7 +167,7 @@ const Dashboard = () => {
                           variant="outline" 
                           size="sm" 
                           className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100"
-                          onClick={handleLocationRequest}
+                          onClick={requestLocationPermission}
                         >
                           <MapPin className="mr-2 h-3 w-3" />
                           Enable Location
@@ -147,31 +177,47 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {userLocation && nearbyProviders.length > 0 && (
+                {userLocation && (
                   <div className="mb-8">
                     <h3 className="font-medium text-lg mb-4">Nearby Service Providers</h3>
-                    <div className="grid gap-4">
-                      {nearbyProviders.map((provider) => (
-                        <Card key={provider.provider_id} className="border-0 shadow-sm">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h4 className="font-medium">{provider.business_name}</h4>
-                                <p className="text-sm text-gray-600">
-                                  {provider.service_types.join(', ')}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {provider.distance.toFixed(1)} km away
-                                </p>
+                    {isLoading ? (
+                      <p className="text-center py-4">Loading nearby providers...</p>
+                    ) : nearbyProviders.length > 0 ? (
+                      <div className="grid gap-4">
+                        {nearbyProviders.map((provider) => (
+                          <Card key={provider.provider_id} className="border-0 shadow-sm">
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <h4 className="font-medium">{provider.business_name}</h4>
+                                  <p className="text-sm text-gray-600">
+                                    {provider.service_types.join(', ')}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {provider.distance.toFixed(1)} km away
+                                  </p>
+                                </div>
+                                <Button variant="outline" size="sm">
+                                  Contact
+                                </Button>
                               </div>
-                              <Button variant="outline" size="sm">
-                                Contact
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p>No providers found nearby. Try expanding your search area.</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={requestLocationPermission}
+                        >
+                          <MapPin className="mr-2 h-3 w-3" /> Update Location
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,30 +8,55 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { LogIn, Mail, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"buyer" | "seller">("buyer");
+  
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
+  
+  useEffect(() => {
+    // Check if user is already logged in, redirect to dashboard
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
   
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       await signIn(email, password);
-      toast({
-        title: "Login successful!",
-        description: "Welcome back to NearFix.",
-      });
-      navigate("/dashboard");
+      
+      // After successful sign-in, show role selection dialog
+      setShowRoleDialog(true);
     } catch (err: any) {
       toast({
         title: "Login failed",
         description: err.message,
         variant: "destructive",
       });
+    }
+  };
+  
+  const handleRoleSelection = () => {
+    toast({
+      title: "Login successful!",
+      description: `Welcome back to NearFix as a ${selectedRole}.`,
+    });
+    
+    if (selectedRole === "seller") {
+      // Redirect to seller dashboard or specific page
+      navigate("/dashboard");
+    } else {
+      // Redirect to buyer dashboard
+      navigate("/dashboard");
     }
   };
   
@@ -105,6 +130,35 @@ const SignIn = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Role Selection Dialog */}
+      <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How would you like to use NearFix today?</DialogTitle>
+            <DialogDescription>
+              Choose your role to continue to the appropriate dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <RadioGroup value={selectedRole} onValueChange={(value) => setSelectedRole(value as "buyer" | "seller")}>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="buyer" id="buyer" />
+                <Label htmlFor="buyer" className="font-medium">I want to hire services (Buyer)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="seller" id="seller" />
+                <Label htmlFor="seller" className="font-medium">I want to offer services (Seller)</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <Button onClick={handleRoleSelection} className="w-full bg-nearfix-600 hover:bg-nearfix-700">
+            Continue
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
