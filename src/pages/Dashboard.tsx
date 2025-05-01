@@ -259,6 +259,9 @@ const Dashboard = () => {
                     <Button asChild className="bg-nearfix-600 hover:bg-nearfix-700">
                       <Link to="/post-job">Post Your First Job</Link>
                     </Button>
+                    <Button asChild className="bg-nearfix-600 hover:bg-nearfix-700">
+                      <Link to="/become-seller">Post Your First sellor</Link>
+                    </Button>
                   </div>
                 )}
               </TabsContent>

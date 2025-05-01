@@ -36,13 +36,7 @@ const JobConfirmation = () => {
               Go to Dashboard
             </Button>
             
-            <Button 
-              variant="outline"
-              onClick={() => navigate("/")}
-              className="w-full"
-            >
-              Return to Home
-            </Button>
+           
           </div>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -20,6 +19,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata: { name: string; role?: string }) => Promise<void>;
   signOut: () => Promise<void>;
+  postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;  // Add postJob function signature
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -145,16 +145,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/signin');
   };
 
+  const postJob = async (formData: any) => {
+    try {
+      // Insert job details into Supabase (or your backend of choice)
+      const { error } = await supabase.from('jobs').insert([
+        {
+          title: formData.title,
+          service_type: formData.serviceType,
+          description: formData.description,
+          address: formData.address,
+          city: formData.city,
+          pincode: formData.pincode,
+          timing: formData.timing,
+          budget_range: formData.budgetRange,
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+        },
+      ]);
+
+      if (error) {
+        throw error;
+      }
+
+      // Return success response
+      return { success: true };
+    } catch (error) {
+      console.error("Error posting job:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user, 
-      userLocation, 
-      setUserLocation, 
-      requestLocationPermission, 
-      signIn, 
-      signUp, 
-      signOut 
+    <AuthContext.Provider value={{
+      session,
+      user,
+      userLocation,
+      setUserLocation,
+      requestLocationPermission,
+      signIn,
+      signUp,
+      signOut,
+      postJob // Provide the postJob function here
     }}>
       {children}
     </AuthContext.Provider>
