@@ -34,6 +34,12 @@ const Navbar = () => {
             <Link to="/contact" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
               Contact
             </Link>
+            <Link to="/search-services" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
+              search
+            </Link>
+            <Link to="/dashboard" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
+              Dashboard
+            </Link>
           </nav>
         </div>
         

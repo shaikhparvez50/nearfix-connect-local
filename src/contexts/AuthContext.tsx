@@ -19,7 +19,9 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata: { name: string; role?: string }) => Promise<void>;
   signOut: () => Promise<void>;
-  postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;  // Add postJob function signature
+  postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;
+  sendOtp: (email: string) => Promise<void>;
+  verifyOtp: (email: string, token: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,12 +35,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // If user is logged in, redirect to dashboard
-        if (session?.user && window.location.pathname === '/') {
+        if (session?.user && window.location.pathname === '/signin') {
           navigate('/dashboard');
         }
       }
@@ -49,8 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // If user is logged in and on the homepage, redirect to dashboard
-      if (session?.user && window.location.pathname === '/') {
+      if (session?.user && window.location.pathname === '/signin') {
         navigate('/dashboard');
       }
     });
@@ -176,6 +176,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const sendOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+  };
+
+  const verifyOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    });
+
+    if (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       session,
@@ -186,7 +211,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signUp,
       signOut,
-      postJob // Provide the postJob function here
+      postJob,
+      sendOtp,
+      verifyOtp,
     }}>
       {children}
     </AuthContext.Provider>

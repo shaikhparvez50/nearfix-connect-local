@@ -26,6 +26,8 @@ interface Provider {
   address: string;
   verified?: boolean;
   available?: string;
+  description?: string;
+  hourly_rate?: number;
 }
 
 const SearchResults = () => {
@@ -37,6 +39,8 @@ const SearchResults = () => {
   const [location, setLocation] = useState(locationParam);
   const [maxDistance, setMaxDistance] = useState([10]);
   const [showFilters, setShowFilters] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
   const [selectedProviderType, setSelectedProviderType] = useState('');
@@ -54,35 +58,87 @@ const SearchResults = () => {
       setShowLocationAlert(false);
     }
     
-    const fetchProviders = async () => {
-      if (!userLocation) return;
-      
-      try {
-        const { data, error } = await supabase.rpc('find_nearest_providers', {
-          user_lat: userLocation.latitude,
-          user_lon: userLocation.longitude,
-          limit_count: 10
-        });
-
-        if (error) throw error;
-        
-        setProviders(data || []);
-      } catch (error: any) {
-        console.error('Error fetching providers:', error);
-        toast.error('Failed to load service providers');
-      }
-    };
-
-    if (userLocation) {
-      fetchProviders();
+    if (serviceParam) {
+      searchServices();
     }
-  }, [userLocation, locationParam]);
+  }, [serviceParam, locationParam, userLocation]);
+  
+  const searchServices = async () => {
+    if (!service.trim()) return;
+    
+    setLoading(true);
+    setError("");
+
+    try {
+      let query = supabase
+        .from('service_providers')
+        .select('*')
+        .or(`business_name.ilike.%${service}%,description.ilike.%${service}%,service_types.cs.{${service}}`)
+        .eq('is_available', true);
+
+      // Apply filters
+      if (selectedServiceTypes.length > 0) {
+        query = query.contains('service_types', selectedServiceTypes);
+      }
+      
+      if (selectedProviderType) {
+        query = query.eq('provider_type', selectedProviderType);
+      }
+      
+      if (onlyVerified) {
+        query = query.eq('verified', true);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // If location is provided, filter by distance
+      let filteredData = data || [];
+      if (userLocation) {
+        filteredData = filteredData.filter(provider => {
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            provider.latitude,
+            provider.longitude
+          );
+          return distance <= maxDistance[0];
+        });
+      }
+
+      setProviders(filteredData);
+    } catch (err) {
+      setError("Failed to fetch services. Please try again.");
+      console.error("Error searching services:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const distance = R * c; // Distance in km
+    return distance;
+  };
+
+  const deg2rad = (deg: number) => {
+    return deg * (Math.PI/180);
+  };
   
   const handleLocationRequest = async () => {
     const success = await requestLocationPermission();
     if (success) {
       setShowLocationAlert(false);
       toast.success("Showing service providers near your location");
+      searchServices();
     }
   };
   
@@ -96,6 +152,7 @@ const SearchResults = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    searchServices();
   };
 
   return (
@@ -308,99 +365,84 @@ const SearchResults = () => {
             </div>
             
             <div className="lg:col-span-3">
-              <div className="mb-4 flex justify-between items-center">
-                <div>
-                  <h2 className="font-heading font-medium text-lg">
-                    {providers.length} Service Providers Found
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Showing results for {service || 'All Services'} in {userLocation?.address || location || 'Your Area'}
-                  </p>
+              {error && (
+                <Alert className="mb-6 bg-red-50 border-red-200">
+                  <AlertDescription className="text-red-600">
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {loading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="border-0 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </div>
-              
-              <div className="space-y-4">
-                {providers.map((provider) => (
-                  <Card key={provider.provider_id} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="flex flex-col md:flex-row">
-                        <div className="p-4 md:p-6 flex-grow">
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
-                              <AvatarImage src="/placeholder.svg" alt={provider.business_name} />
-                              <AvatarFallback className="bg-nearfix-100 text-nearfix-700">
-                                {provider.business_name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium text-lg">{provider.business_name}</h3>
-                                {provider.verified && (
-                                  <Badge variant="secondary" className="bg-green-50 text-green-700 flex items-center gap-1">
-                                    <UserCheck className="h-3 w-3" />
-                                    <span className="text-xs">Verified</span>
-                                  </Badge>
-                                )}
-                              </div>
-                              {provider.rating && (
-                                <div className="flex items-center mt-1">
-                                  <div className="flex items-center text-yellow-400 mr-2">
-                                    <Star className="h-4 w-4 fill-yellow-400" />
-                                    <span className="text-sm font-medium text-gray-700 ml-1">
-                                      {provider.rating}
-                                    </span>
-                                  </div>
-                                  {provider.reviews && (
-                                    <span className="text-xs text-gray-500">
-                                      ({provider.reviews} reviews)
-                                    </span>
-                                  )}
-                                </div>
+              ) : providers.length > 0 ? (
+                <div className="space-y-4">
+                  {providers.map((provider) => (
+                    <Card key={provider.provider_id} className="border-0 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium text-lg">{provider.business_name}</h3>
+                              {provider.verified && (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50 border-green-200">
+                                  <UserCheck className="h-3 w-3 mr-1" /> Verified
+                                </Badge>
                               )}
                             </div>
-                          </div>
-                          
-                          <div className="mt-4">
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {provider.service_types.map((service) => (
-                                <Badge key={service} variant="outline" className="bg-nearfix-50 text-nearfix-700 border-none">
+                            <p className="text-sm text-gray-600 flex items-center">
+                              <MapPin className="h-3.5 w-3.5 mr-1 text-gray-400" /> {provider.address}
+                            </p>
+                            {provider.description && (
+                              <p className="text-sm text-gray-500 mt-1">{provider.description}</p>
+                            )}
+                            {provider.hourly_rate && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                Hourly Rate: ${provider.hourly_rate}
+                              </p>
+                            )}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {provider.service_types.map((service, index) => (
+                                <Badge key={index} variant="outline" className="bg-nearfix-50 text-nearfix-600 hover:bg-nearfix-50 border-nearfix-200">
                                   {service}
                                 </Badge>
                               ))}
                             </div>
-                            
-                            <div className="flex items-center text-sm text-gray-600 mb-2">
-                              <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                              <span>{provider.address}</span>
-                              <span className="mx-2">•</span>
-                              <span>{provider.distance.toFixed(1)} km</span>
-                            </div>
-                            
-                            {provider.available && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                                <span>Available: {provider.available}</span>
-                              </div>
-                            )}
+                          </div>
+                          
+                          <div className="flex gap-3">
+                            <Button variant="outline" title="View provider profile">
+                              View Profile
+                            </Button>
+                            <Button className="bg-nearfix-500 hover:bg-nearfix-600" title="Contact provider">
+                              <Phone className="h-4 w-4 mr-2" />
+                              Contact
+                            </Button>
                           </div>
                         </div>
-                        
-                        <div className="p-4 md:p-6 md:border-l flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 bg-gray-50">
-                          <Button asChild variant="outline">
-                            <a href={`/provider/${provider.provider_id}`}>
-                              View Profile
-                            </a>
-                          </Button>
-                          <Button className="bg-nearfix-500 hover:bg-nearfix-600">
-                            <Phone className="h-4 w-4 mr-2" />
-                            Contact
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : service ? (
+                <div className="text-center py-16 bg-white rounded-md">
+                  <Search className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No service providers found</h3>
+                  <p className="text-gray-600">Try adjusting your search or filters</p>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

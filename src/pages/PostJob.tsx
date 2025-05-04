@@ -32,7 +32,9 @@ const PostJob = () => {
     category: '',
     location: '',
     user_id: '',
-    budget: null,
+    budget: 0,
+    Phone_Number: '',
+    email: '',
     status: 'open',
   });
   const [step, setStep] = useState(1);
@@ -227,9 +229,32 @@ const PostJob = () => {
 
                   {step === 3 && (
                     <div className="space-y-6">
-                      <p className="text-sm text-gray-600">
-                        Your contact info is already linked to your NearFix account.
-                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="Phone_Number">Phone Number</Label>
+                        <Input
+                          id="Phone_Number"
+                          name="Phone_Number"
+                          value={formData.Phone_Number}
+                          onChange={handleChange}
+                          placeholder="Enter your phone number"
+                          type="tel"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          placeholder="Enter your email address"
+                          type="email"
+                          required
+                        />
+                      </div>
+
                       <div className="flex items-start space-x-2">
                         <Info className="h-5 w-5 text-nearfix-600 mt-0.5" />
                         <p className="text-sm text-gray-600">
@@ -241,6 +266,8 @@ const PostJob = () => {
                         <input
                           type="checkbox"
                           id="terms"
+                          name="terms"
+                          aria-label="Agree to terms and conditions"
                           className="mt-1"
                           required
                         />
