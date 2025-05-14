@@ -31,6 +31,8 @@ type Job = {
   status: string;
   created_at: string;
   responses: number;
+  email?: string;
+  Phone_Number?: string;
 };
 
 type SellerPost = {
@@ -79,7 +81,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchJobs();
-      fetchSellerPosts();
+      // Temporarily disable seller posts fetch as the table doesn't exist
+      // fetchSellerPosts();
     }
   }, [user]);
   
@@ -103,21 +106,21 @@ const Dashboard = () => {
       if (activeError) throw activeError;
       if (completedError) throw completedError;
 
-      // Get response counts for each job
-      const jobsWithResponses = await Promise.all(
-        [...(activeData || []), ...(completedData || [])].map(async (job) => {
-          const { count, error } = await supabase
-            .from('job_responses')
-            .select('*', { count: 'exact', head: true })
-            .eq('job_id', job.id);
+      // Since job_responses table doesn't exist, we'll set responses to 0 for now
+      const activeJobsWithResponses = (activeData || []).map(job => ({
+        ...job,
+        responses: 0, 
+        Phone_Number: job.Phone_Number?.toString() || '',
+      }));
 
-          if (error) throw error;
-          return { ...job, responses: count || 0 };
-        })
-      );
+      const completedJobsWithResponses = (completedData || []).map(job => ({
+        ...job,
+        responses: 0,
+        Phone_Number: job.Phone_Number?.toString() || '',
+      }));
 
-      setActiveJobs(jobsWithResponses.filter(job => job.status === 'open'));
-      setCompletedJobs(jobsWithResponses.filter(job => job.status === 'completed'));
+      setActiveJobs(activeJobsWithResponses);
+      setCompletedJobs(completedJobsWithResponses);
     } catch (error: any) {
       toast.error("Failed to fetch jobs");
       console.error("Error fetching jobs:", error);
@@ -126,31 +129,13 @@ const Dashboard = () => {
     }
   };
 
+  // Since the seller_posts table doesn't exist in the database yet, 
+  // we'll temporarily disable this function
   const fetchSellerPosts = async () => {
     setIsLoadingSellerPosts(true);
     try {
-      const { data, error } = await supabase
-        .from('seller_posts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Get response counts for each seller post
-      const postsWithResponses = await Promise.all(
-        (data || []).map(async (post) => {
-          const { count, error } = await supabase
-            .from('seller_responses')
-            .select('*', { count: 'exact', head: true })
-            .eq('seller_post_id', post.id);
-
-          if (error) throw error;
-          return { ...post, responses: count || 0 };
-        })
-      );
-
-      setSellerPosts(postsWithResponses);
+      // Since seller_posts table doesn't exist, we'll use an empty array for now
+      setSellerPosts([]);
     } catch (error: any) {
       toast.error("Failed to fetch seller posts");
       console.error("Error fetching seller posts:", error);

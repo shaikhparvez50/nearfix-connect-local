@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, MapPin, Clock, DollarSign, MessageSquare, Phone, Mail } from 'lucide-react';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -67,8 +68,14 @@ const JobSearch = () => {
       }
       
       console.log('Fetched jobs:', data);
-      setJobs(data || []);
-    } catch (error) {
+      // Convert Phone_Number to string if it's a number
+      const typeSafeJobs = (data || []).map(job => ({
+        ...job,
+        Phone_Number: job.Phone_Number?.toString() || ''
+      })) as Job[];
+      
+      setJobs(typeSafeJobs);
+    } catch (error: any) {
       console.error('Error in fetchJobs:', error);
       toast({
         title: "Error",
@@ -251,4 +258,4 @@ const JobSearch = () => {
   );
 };
 
-export default JobSearch; 
+export default JobSearch;

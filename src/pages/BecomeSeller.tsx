@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,15 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../integrations/supabase/client";
-import { TablesInsert } from "../integrations/supabase/types";
+import { TablesInsert } from "../types/types";
 import { toast } from "react-hot-toast";
+import { Json } from "@/integrations/supabase/types";
+
+// Extended type to include profile_photo_url and work_samples_urls
+interface SellerFormData extends TablesInsert<'service_providers'> {
+  profile_photo_url?: string;
+  work_samples_urls?: string[];
+}
 
 const BecomeSeller = () => {
   const [step, setStep] = useState(1);
@@ -39,16 +47,18 @@ const BecomeSeller = () => {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const navigate = useNavigate();
   
-  const [formData, setFormData] = useState<TablesInsert<'service_providers'>>({
+  const [formData, setFormData] = useState<SellerFormData>({
     user_id: '',
     business_name: '',
     description: '',
     hourly_rate: null,
     is_available: true,
     service_types: [],
-    availability_schedule: null,
+    availability_schedule: null as unknown as Json,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    profile_photo_url: undefined,
+    work_samples_urls: [],
   });
 
   useEffect(() => {
@@ -131,7 +141,7 @@ const BecomeSeller = () => {
           work_samples_urls: [...(prev.work_samples_urls || []), publicUrl] 
         }));
       }
-    } catch (error) {
+    } catch (error: any) {
       setMessage(`❌ Error uploading file: ${error.message}`);
     }
   };

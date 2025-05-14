@@ -1,22 +1,26 @@
+
 import { useState } from "react";
 
-type Toast = {
+export type Toast = {
+  id: string;
   title: string;
   description?: string;
+  action?: React.ReactNode;
   variant?: "default" | "destructive";
 };
 
 export const useToast = () => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = (toast: Toast) => {
-    setToasts((prev) => [...prev, toast]);
+  const toast = (props: Omit<Toast, "id">) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, ...props }]);
   };
 
-  return { toasts, showToast };
+  return { toasts, toast };
 };
 
 export const useToastAction = () => {
-  const { showToast } = useToast();
-  return { toast: showToast };
+  const { toast } = useToast();
+  return { toast };
 };

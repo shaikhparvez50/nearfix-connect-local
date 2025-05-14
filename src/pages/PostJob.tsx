@@ -24,9 +24,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Upload, MapPin, Calendar, ArrowRight, Info } from 'lucide-react';
 
+// Custom type that includes Phone_Number field
+interface JobPostingForm extends Omit<TablesInsert<'job_postings'>, 'phone_number'> {
+  Phone_Number: string;
+}
+
 const PostJob = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<TablesInsert<'job_postings'>>({
+  const [formData, setFormData] = useState<JobPostingForm>({
     title: '',
     description: '',
     category: '',
@@ -98,9 +103,13 @@ const PostJob = () => {
     setMessage('');
     const timestamp = new Date().toISOString();
 
+    // Convert Phone_Number to phone_number for database insertion
+    const { Phone_Number, ...restFormData } = formData;
+    
     const { error } = await supabase.from('job_postings').insert([
       {
-        ...formData,
+        ...restFormData,
+        phone_number: Phone_Number, // Use lowercase for database
         created_at: timestamp,
         updated_at: timestamp,
       },
