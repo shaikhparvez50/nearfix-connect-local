@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -22,6 +23,8 @@ type AuthContextType = {
   postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;
   sendOtp: (email: string) => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<void>;
+  isUserSignedUp: boolean;
+  userRole: string | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [isUserSignedUp, setIsUserSignedUp] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,19 +44,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user && window.location.pathname === '/signin') {
-          navigate('/dashboard');
+        if (session?.user) {
+          // Check if user has role info
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profileData?.role) {
+            setUserRole(profileData.role);
+            setIsUserSignedUp(true);
+          } else {
+            setIsUserSignedUp(false);
+          }
+          
+          // If user is authenticated and on sign-in page, redirect to dashboard
+          if (window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+            navigate('/dashboard');
+          }
         }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user && window.location.pathname === '/signin') {
-        navigate('/dashboard');
+      if (session?.user) {
+        // Check if user has role info
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profileData?.role) {
+          setUserRole(profileData.role);
+          setIsUserSignedUp(true);
+        } else {
+          setIsUserSignedUp(false);
+        }
+        
+        // If user is authenticated and on sign-in page, redirect to dashboard
+        if (window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+          navigate('/dashboard');
+        }
       }
     });
 
@@ -214,6 +253,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       postJob,
       sendOtp,
       verifyOtp,
+      isUserSignedUp,
+      userRole,
     }}>
       {children}
     </AuthContext.Provider>
