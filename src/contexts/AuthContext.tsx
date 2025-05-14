@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -29,7 +28,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
@@ -240,6 +239,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const checkUserRole = async (userId: string) => {
+    try {
+      // First check if user is a seller
+      const { data: sellerData } = await supabase
+        .from('seller_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (sellerData) {
+        return 'seller';
+      }
+
+      // Check if user has any job postings (indicating they're a buyer/client)
+      const { data: jobsData } = await supabase
+        .from('job_postings')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (jobsData && jobsData.length > 0) {
+        return 'buyer';
+      }
+
+      // Default to 'client' if no specific role found
+      return 'client';
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      return 'client'; // Default role
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       session,
@@ -259,7 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

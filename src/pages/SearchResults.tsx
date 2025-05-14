@@ -15,20 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Provider {
-  provider_id: string;
-  business_name: string;
-  rating?: number;
-  reviews?: number;
-  service_types: string[];
-  distance: number;
-  address: string;
-  verified?: boolean;
-  available?: string;
-  description?: string;
-  hourly_rate?: number;
-}
+import { Provider } from "@/types/types";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -70,45 +57,84 @@ const SearchResults = () => {
     setError("");
 
     try {
-      let query = supabase
-        .from('service_providers')
-        .select('*')
-        .or(`business_name.ilike.%${service}%,description.ilike.%${service}%,service_types.cs.{${service}}`)
-        .eq('is_available', true);
-
-      // Apply filters
-      if (selectedServiceTypes.length > 0) {
-        query = query.contains('service_types', selectedServiceTypes);
-      }
-      
-      if (selectedProviderType) {
-        query = query.eq('provider_type', selectedProviderType);
-      }
-      
-      if (onlyVerified) {
-        query = query.eq('verified', true);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // If location is provided, filter by distance
-      let filteredData = data || [];
+      // Using our find_nearest_providers function if userLocation exists
       if (userLocation) {
-        filteredData = filteredData.filter(provider => {
-          const distance = calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
-            provider.latitude,
-            provider.longitude
-          );
-          return distance <= maxDistance[0];
+        const { data, error } = await supabase.rpc('find_nearest_providers', {
+          user_lat: userLocation.latitude,
+          user_lon: userLocation.longitude,
+          limit_count: 20
         });
-      }
 
-      setProviders(filteredData);
-    } catch (err) {
+        if (error) throw error;
+        
+        // Transform the response to match our Provider interface
+        const mappedProviders: Provider[] = (data || []).map(provider => ({
+          provider_id: provider.provider_id,
+          business_name: provider.business_name || 'Unknown Provider',
+          service_types: provider.service_types || [],
+          distance: provider.distance || 0,
+          address: provider.address || 'Unknown location',
+          description: provider.description || '',
+          hourly_rate: provider.hourly_rate || undefined,
+          latitude: provider.latitude,
+          longitude: provider.longitude,
+          verified: false
+        }));
+
+        // Filter by service name/type
+        const filteredProviders = mappedProviders.filter(provider => {
+          const matchesService = 
+            provider.business_name.toLowerCase().includes(service.toLowerCase()) || 
+            provider.description?.toLowerCase().includes(service.toLowerCase()) ||
+            provider.service_types.some(type => 
+              type.toLowerCase().includes(service.toLowerCase())
+            );
+          
+          // Apply filters
+          const matchesType = selectedServiceTypes.length === 0 || 
+            selectedServiceTypes.some(type => provider.service_types.includes(type));
+          
+          const isWithinDistance = provider.distance <= maxDistance[0];
+          
+          return matchesService && matchesType && isWithinDistance;
+        });
+
+        setProviders(filteredProviders);
+      } else {
+        // Alternative approach without location data - query service providers directly
+        let query = supabase
+          .from('service_providers')
+          .select('*')
+          .filter('is_available', 'eq', true);
+        
+        if (service) {
+          query = query.or(`business_name.ilike.%${service}%,description.ilike.%${service}%`);
+        }
+        
+        // Apply other filters
+        if (selectedServiceTypes.length > 0) {
+          query = query.contains('service_types', selectedServiceTypes);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        // Transform the response to match our Provider interface
+        const mappedProviders: Provider[] = (data || []).map(provider => ({
+          provider_id: provider.id,
+          business_name: provider.business_name || 'Unknown Provider',
+          service_types: provider.service_types || [],
+          distance: 0, // Unknown distance without location
+          address: location || 'Unknown location',
+          description: provider.description || '',
+          hourly_rate: provider.hourly_rate || undefined,
+          verified: false
+        }));
+        
+        setProviders(mappedProviders);
+      }
+    } catch (err: any) {
       setError("Failed to fetch services. Please try again.");
       console.error("Error searching services:", err);
     } finally {

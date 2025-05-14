@@ -4,22 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { Plus, Clock, CheckCircle, AlertCircle, MapPin, Navigation, Briefcase, User, Store, Search } from "lucide-react";
+import { 
+  Plus, Clock, CheckCircle, AlertCircle, MapPin, Navigation, 
+  Briefcase, User, Store, Search 
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+import { 
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { Job, SellerPost, Provider } from "@/types/types";
 
 type Job = {
   id: string;
@@ -81,35 +79,36 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchJobs();
-      // Temporarily disable seller posts fetch as the table doesn't exist
-      // fetchSellerPosts();
+      fetchSellerPosts();
     }
   }, [user]);
   
   const fetchJobs = async () => {
+    if (!user?.id) return;
+    
     setIsLoadingJobs(true);
     try {
       const { data: activeData, error: activeError } = await supabase
         .from('job_postings')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
       const { data: completedData, error: completedError } = await supabase
         .from('job_postings')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('status', 'completed')
         .order('created_at', { ascending: false });
 
       if (activeError) throw activeError;
       if (completedError) throw completedError;
 
-      // Since job_responses table doesn't exist, we'll set responses to 0 for now
+      // Map to the expected Job type
       const activeJobsWithResponses = (activeData || []).map(job => ({
         ...job,
-        responses: 0, 
+        responses: 0,
         Phone_Number: job.Phone_Number?.toString() || '',
       }));
 
@@ -129,13 +128,42 @@ const Dashboard = () => {
     }
   };
 
-  // Since the seller_posts table doesn't exist in the database yet, 
-  // we'll temporarily disable this function
   const fetchSellerPosts = async () => {
+    if (!user?.id) return;
+    
     setIsLoadingSellerPosts(true);
     try {
-      // Since seller_posts table doesn't exist, we'll use an empty array for now
-      setSellerPosts([]);
+      // Check if user has a seller profile
+      const { data: sellerProfile, error: sellerError } = await supabase
+        .from('seller_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (sellerError && sellerError.code !== 'PGRST116') {
+        // PGRST116 is the error code for no rows returned
+        throw sellerError;
+      }
+
+      // If user has a seller profile, create a mock seller post
+      if (sellerProfile) {
+        // Create a mock seller post for demonstration
+        const mockSellerPosts: SellerPost[] = [{
+          id: sellerProfile.id,
+          title: sellerProfile.business_name,
+          description: sellerProfile.description || 'Your service offering',
+          service_types: sellerProfile.services || [],
+          hourly_rate: sellerProfile.hourly_rate || 0,
+          location: userLocation?.address || 'Your location',
+          status: 'active',
+          created_at: sellerProfile.created_at,
+          responses: 0
+        }];
+        
+        setSellerPosts(mockSellerPosts);
+      } else {
+        setSellerPosts([]);
+      }
     } catch (error: any) {
       toast.error("Failed to fetch seller posts");
       console.error("Error fetching seller posts:", error);
@@ -156,7 +184,19 @@ const Dashboard = () => {
       });
 
       if (error) throw error;
-      setNearbyProviders(data || []);
+
+      // Map the data to our Provider type
+      const mappedProviders: Provider[] = (data || []).map(provider => ({
+        provider_id: provider.provider_id,
+        business_name: provider.business_name || 'Unknown Provider',
+        service_types: provider.service_types || [],
+        distance: provider.distance || 0,
+        address: provider.address || 'Unknown location',
+        description: provider.description || '',
+        hourly_rate: provider.hourly_rate || undefined
+      }));
+
+      setNearbyProviders(mappedProviders);
     } catch (error: any) {
       toast.error("Failed to fetch nearby providers");
       console.error("Error fetching providers:", error);

@@ -1,14 +1,21 @@
 
-import { Toast as ToastPrimitive } from "@/components/ui/toast"
-import { useToast as useToastInternal } from "@/components/ui/use-toast"
+import { useState } from "react";
 
-export type Toast = ToastPrimitive & {
-  id: string
-  title?: string
-  description?: string
-  action?: React.ReactNode
-}
+export type Toast = {
+  id: string;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  variant?: "default" | "destructive";
+};
 
-export function useToast() {
-  return useToastInternal()
-}
+export const useToast = () => {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const toast = (props: Omit<Toast, "id">) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, ...props }]);
+  };
+
+  return { toasts, toast };
+};
