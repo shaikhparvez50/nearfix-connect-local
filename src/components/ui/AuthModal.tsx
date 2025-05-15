@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 import { Mail, Lock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type AuthModalProps = {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn } = useAuth();
   
   // Redirect if already logged in
   if (user) {
@@ -36,12 +37,31 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     
     try {
       setIsLoading(true);
+      
+      // Check if the email exists
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .limit(1);
+        
+      if (!profileData || profileData.length === 0) {
+        toast.error('Email not found. Please sign up first.');
+        setActiveTab('signup');
+        setIsLoading(false);
+        return;
+      }
+      
       await signIn(email, password);
       toast.success('Successfully logged in');
       navigate('/dashboard');
       onClose();
-    } catch (error) {
-      toast.error(error.message || 'Failed to sign in');
+    } catch (error: any) {
+      if (error.message.includes("Invalid login")) {
+        toast.error('Invalid email or password');
+      } else {
+        toast.error(error.message || 'Failed to sign in');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -55,10 +75,26 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     
     try {
       setIsLoading(true);
-      await signUp(email, password, { name: email.split('@')[0] });
-      toast.success('Account created successfully! You can now sign in.');
-      setActiveTab('login');
-    } catch (error) {
+      
+      // Check if user already exists
+      const { data: existingUsers } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .limit(1);
+      
+      if (existingUsers && existingUsers.length > 0) {
+        toast.error("This email is already registered. Please sign in instead.");
+        setActiveTab('login');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Direct the user to the full sign up page for a better experience
+      navigate('/signup', { state: { email, password } });
+      onClose();
+      return;
+    } catch (error: any) {
       toast.error(error.message || 'Failed to sign up');
     } finally {
       setIsLoading(false);
@@ -149,8 +185,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   disabled={isLoading}
                   className="w-full"
                 >
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                  {isLoading ? 'Continue to Sign Up' : 'Continue to Sign Up'}
                 </Button>
+                <div className="text-center text-xs text-gray-500 mt-2">
+                  For a complete profile, you'll be redirected to our sign-up page
+                </div>
               </div>
             </div>
           </TabsContent>

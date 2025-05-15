@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -33,11 +34,31 @@ export default function SignIn() {
     
     try {
       setIsLoading(true);
+      
+      // Check if the email exists in the database
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .limit(1);
+        
+      if (!profileData || profileData.length === 0) {
+        toast.error('Email not found. Please sign up first.');
+        setIsLoading(false);
+        return;
+      }
+      
       await signIn(email, password);
       toast.success('Successfully logged in');
       navigate(from, { replace: true });
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign in');
+      console.error("Sign-in error:", error);
+      
+      if (error.message.includes("Invalid login")) {
+        toast.error('Invalid email or password');
+      } else {
+        toast.error(error.message || 'Failed to sign in');
+      }
     } finally {
       setIsLoading(false);
     }

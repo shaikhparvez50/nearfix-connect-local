@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from '@/contexts/AuthContext';
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -54,6 +53,19 @@ const SignUp = () => {
     }
     
     try {
+      // First, check if user already exists
+      const { data: existingUsers } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', formData.email)
+        .limit(1);
+      
+      if (existingUsers && existingUsers.length > 0) {
+        toast.error("This email is already registered. Please sign in instead.");
+        setIsLoading(false);
+        return;
+      }
+      
       // 1. Register the user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -66,7 +78,15 @@ const SignUp = () => {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        if (authError.message.includes("already registered")) {
+          toast.error("This email is already registered. Please sign in instead.");
+          setTimeout(() => navigate('/signin'), 2000);
+        } else {
+          throw authError;
+        }
+        return;
+      }
       
       // 2. Create a profile record with additional information
       if (authData.user) {
@@ -86,7 +106,14 @@ const SignUp = () => {
       navigate("/signin");
     } catch (err: any) {
       console.error("Error during signup:", err);
-      toast.error(err.message || "Registration failed");
+      
+      // Handle the case where the user is already registered
+      if (err.message && err.message.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+        setTimeout(() => navigate('/signin'), 2000);
+      } else {
+        toast.error(err.message || "Registration failed");
+      }
     } finally {
       setIsLoading(false);
     }
