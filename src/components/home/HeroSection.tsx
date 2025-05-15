@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthCheck } from "@/hooks/useAuthCheck";
 import { AuthModal } from "@/components/ui/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const HeroSection = () => {
   const [serviceType, setServiceType] = useState("");

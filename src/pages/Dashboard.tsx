@@ -1,6 +1,7 @@
 
 // Import necessary components and types
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ interface DashboardSellerPost {
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user, userRole, requestLocationPermission } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [providers, setProviders] = useState<DashboardProvider[]>([]);
