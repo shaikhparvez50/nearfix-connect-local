@@ -19,7 +19,7 @@ const HeroSection = () => {
   const [location, setLocation] = useState("");
   const navigate = useNavigate();
   const { showAuthModal, setShowAuthModal, requireAuth } = useAuthCheck();
-  const { user } = useAuth();
+  const { user, requestLocationPermission } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +38,17 @@ const HeroSection = () => {
     requireAuth(() => {
       navigate("/become-seller");
     });
+  };
+
+  const handleDetectLocation = async () => {
+    if (user) {
+      const success = await requestLocationPermission();
+      if (success) {
+        toast.success("Location detected successfully");
+      }
+    } else {
+      setShowAuthModal(true);
+    }
   };
 
   return (
@@ -84,6 +95,15 @@ const HeroSection = () => {
                         onChange={(e) => setLocation(e.target.value)}
                         className="border-0 shadow-none focus:ring-0 h-12 flex-1"
                       />
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-nearfix-500"
+                        onClick={handleDetectLocation}
+                      >
+                        Detect
+                      </Button>
                     </div>
                   </div>
                   <Button 
@@ -121,14 +141,14 @@ const HeroSection = () => {
               </h2>
               <div className="flex flex-col md:flex-row gap-4 justify-center">
                 <Button
-                  onClick={() => setShowAuthModal(true)}
+                  onClick={() => navigate("/signin")}
                   className="bg-nearfix-600 hover:bg-nearfix-700 text-white h-12 px-6 rounded-lg"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
                   Login
                 </Button>
                 <Button
-                  onClick={() => setShowAuthModal(true)}
+                  onClick={() => navigate("/signup")}
                   variant="outline"
                   className="border-nearfix-500 text-nearfix-600 hover:bg-nearfix-50 h-12 px-6 rounded-lg"
                 >

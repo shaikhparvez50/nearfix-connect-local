@@ -168,12 +168,13 @@ const Dashboard = () => {
   const renderContent = () => {
     if (!user) {
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome</CardTitle>
-            <CardDescription>Please sign in to view your dashboard</CardDescription>
-          </CardHeader>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-12">
+          <h2 className="text-2xl font-bold mb-4">Please Sign In</h2>
+          <p className="text-gray-600 mb-6">You need to be logged in to view your dashboard</p>
+          <Button onClick={() => navigate('/signin')}>
+            Sign In
+          </Button>
+        </div>
       );
     }
     

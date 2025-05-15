@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,16 +9,20 @@ import { toast } from 'sonner';
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Get the path to redirect to after login (if provided)
+  const from = location.state?.from || '/dashboard';
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, from]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +35,7 @@ export default function SignIn() {
       setIsLoading(true);
       await signIn(email, password);
       toast.success('Successfully logged in');
-      navigate('/dashboard');
+      navigate(from, { replace: true });
     } catch (error: any) {
       toast.error(error.message || 'Failed to sign in');
     } finally {
