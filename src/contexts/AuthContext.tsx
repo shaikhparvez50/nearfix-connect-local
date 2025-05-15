@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -55,11 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else {
             setIsUserSignedUp(false);
           }
-          
-          // If user is authenticated and on sign-in page, redirect to dashboard
-          if (window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-            navigate('/dashboard');
-          }
         }
       }
     );
@@ -82,11 +78,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsUserSignedUp(true);
         } else {
           setIsUserSignedUp(false);
-        }
-        
-        // If user is authenticated and on sign-in page, redirect to dashboard
-        if (window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          navigate('/dashboard');
         }
       }
     });
@@ -204,37 +195,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error("Error posting job:", error);
       return { success: false, error: error.message };
-    }
-  };
-
-  const checkUserRole = async (userId: string) => {
-    try {
-      // First check if user is a seller
-      const { data: sellerData } = await supabase
-        .from('seller_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (sellerData) {
-        return 'seller';
-      }
-
-      // Check if user has any job postings (indicating they're a buyer/client)
-      const { data: jobsData } = await supabase
-        .from('job_postings')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (jobsData && jobsData.length > 0) {
-        return 'buyer';
-      }
-
-      // Default to 'client' if no specific role found
-      return 'client';
-    } catch (error) {
-      console.error('Error checking user role:', error);
-      return 'client'; // Default role
     }
   };
 

@@ -1,8 +1,12 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from '../supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 import { User, Mail, Lock, UserPlus } from "lucide-react";
-import { useToastAction } from "../components/ui/use-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from '@/integrations/supabase/client';
 
 interface FormData {
   name: string;
@@ -21,7 +25,7 @@ const SignUp = () => {
     role: "buyer"
   });
   
-  const { toast } = useToastAction();
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,18 +45,17 @@ const SignUp = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Passwords do not match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
+      toast.error("Passwords do not match");
+      setIsLoading(false);
       return;
     }
     
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // 1. Register the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -63,20 +66,29 @@ const SignUp = () => {
         }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
       
-      toast({
-        title: "Account created successfully!",
-        description: `Welcome to NearFix as a ${formData.role}. You can now sign in.`,
-      });
+      // 2. Create a profile record with additional information
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            name: formData.name,
+            email: formData.email,
+            role: formData.role
+          });
+          
+        if (profileError) throw profileError;
+      }
       
-      navigate("/login");
+      toast.success(`Account created successfully! You can now sign in as a ${formData.role}.`);
+      navigate("/signin");
     } catch (err: any) {
-      toast({
-        title: "Registration failed",
-        description: err.message,
-        variant: "destructive",
-      });
+      console.error("Error during signup:", err);
+      toast.error(err.message || "Registration failed");
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -104,67 +116,67 @@ const SignUp = () => {
             <div className="space-y-2">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
               <div className="relative">
-                <input
+                <Input
                   id="name"
                   name="name"
                   placeholder="Enter your full name"
-                  className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-10"
                   value={formData.name}
                   onChange={handleInputChange}
                   required
                 />
-                <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               </div>
             </div>
 
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
               <div className="relative">
-                <input
+                <Input
                   id="email"
                   name="email"
                   type="email"
                   placeholder="Enter your email address"
-                  className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-10"
                   value={formData.email}
                   onChange={handleInputChange}
                   required
                 />
-                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               </div>
             </div>
 
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
               <div className="relative">
-                <input
+                <Input
                   id="password"
                   name="password"
                   type="password"
                   placeholder="Create a password"
-                  className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-10"
                   value={formData.password}
                   onChange={handleInputChange}
                   required
                 />
-                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               </div>
             </div>
 
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
               <div className="relative">
-                <input
+                <Input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
                   placeholder="Confirm your password"
-                  className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-10"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   required
                 />
-                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               </div>
             </div>
             
@@ -198,16 +210,17 @@ const SignUp = () => {
               </div>
             </div>
             
-            <button
+            <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md flex items-center justify-center"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={isLoading}
             >
-              Create Account <UserPlus className="ml-2 h-4 w-4" />
-            </button>
+              {isLoading ? 'Creating Account...' : 'Create Account'} <UserPlus className="ml-2 h-4 w-4" />
+            </Button>
             
             <div className="text-center text-sm">
               <span className="text-gray-600">Already have an account? </span>
-              <Link to="/login" className="text-blue-600 hover:underline">
+              <Link to="/signin" className="text-blue-600 hover:underline">
                 Sign In
               </Link>
             </div>
