@@ -3,7 +3,7 @@ import { Database as SupabaseDatabase } from '@/integrations/supabase/types';
 
 export type TablesInsert<T extends keyof SupabaseDatabase['public']['Tables']> = SupabaseDatabase['public']['Tables'][T]['Insert'];
 
-// Define our application-specific types
+// Define application-specific types that match our database schema
 export interface Provider {
   provider_id: string;
   business_name: string;
@@ -18,6 +18,7 @@ export interface Provider {
   hourly_rate?: number;
   latitude?: number;
   longitude?: number;
+  user_id: string; // Required for database compatibility
 }
 
 export interface Job {
@@ -28,10 +29,11 @@ export interface Job {
   location: string;
   budget: number;
   email?: string;
-  Phone_Number?: string;
+  Phone_Number?: string; // Match database field name
   status: string;
   created_at: string;
   updated_at?: string;
+  user_id: string; // Required for database compatibility
   responses?: number;
 }
 
@@ -44,6 +46,7 @@ export interface SellerPost {
   location: string;
   status: string;
   created_at: string;
+  user_id: string; // Required for database compatibility
   responses: number;
 }
 
@@ -53,6 +56,7 @@ export interface JobPostingForm {
   category: string;
   location: string;
   budget: number;
-  Phone_Number?: string;
+  Phone_Number?: string; // Match database field name
   email?: string;
+  user_id: string; // Required for database compatibility
 }

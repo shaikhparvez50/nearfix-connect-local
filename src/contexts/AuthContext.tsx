@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -185,8 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const postJob = async (formData: any) => {
     try {
-      // Insert job details into Supabase (or your backend of choice)
-      const { error } = await supabase.from('jobs').insert([
+      // Insert job details into Supabase (using job_postings table that exists in the database)
+      const { error } = await supabase.from('job_postings').insert([
         {
           title: formData.title,
           service_type: formData.serviceType,
