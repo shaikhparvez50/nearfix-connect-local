@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -21,8 +20,6 @@ type AuthContextType = {
   signUp: (email: string, password: string, metadata: { name: string; role?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;
-  sendOtp: (email: string) => Promise<void>;
-  verifyOtp: (email: string, token: string) => Promise<void>;
   isUserSignedUp: boolean;
   userRole: string | null;
 };
@@ -186,22 +183,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const postJob = async (formData: any) => {
     try {
-      // Insert job details into Supabase (using job_postings table that exists in the database)
-      const { error } = await supabase.from('job_postings').insert([
-        {
-          title: formData.title,
-          service_type: formData.serviceType,
-          description: formData.description,
-          address: formData.address,
-          city: formData.city,
-          pincode: formData.pincode,
-          timing: formData.timing,
-          budget_range: formData.budgetRange,
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-        },
-      ]);
+      // Insert job details into Supabase (using job_postings table)
+      const { error } = await supabase.from('job_postings').insert({
+        title: formData.title,
+        category: formData.serviceType, // Map service_type to category
+        description: formData.description,
+        location: `${formData.address}, ${formData.city}, ${formData.pincode}`,
+        budget: formData.budgetRange ? parseFloat(formData.budgetRange) : null,
+        Phone_Number: formData.phone ? parseInt(formData.phone) : null,
+        email: formData.email,
+        user_id: user?.id || ''
+      });
 
       if (error) {
         throw error;
@@ -212,31 +204,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error("Error posting job:", error);
       return { success: false, error: error.message };
-    }
-  };
-
-  const sendOtp = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-
-    if (error) {
-      throw error;
-    }
-  };
-
-  const verifyOtp = async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
-    });
-
-    if (error) {
-      throw error;
     }
   };
 
@@ -282,8 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signUp,
       signOut,
       postJob,
-      sendOtp,
-      verifyOtp,
       isUserSignedUp,
       userRole,
     }}>

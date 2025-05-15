@@ -7,8 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { sendOTP, verifyOTP } from '@/utils/otp';
 import { Mail, Lock } from 'lucide-react';
 
 type AuthModalProps = {
@@ -18,12 +16,11 @@ type AuthModalProps = {
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn, signUp } = useAuth();
   
   // Redirect if already logged in
   if (user) {
@@ -31,45 +28,38 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     return null;
   }
 
-  const handleSendOtp = async () => {
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+    
     try {
       setIsLoading(true);
-      
-      await sendOTP(email);
-      setIsOtpSent(true);
-      toast.success('OTP sent to your email. Please check your inbox.');
+      await signIn(email, password);
+      toast.success('Successfully logged in');
+      navigate('/dashboard');
+      onClose();
     } catch (error) {
-      toast.error(error.message || 'Failed to send OTP');
+      toast.error(error.message || 'Failed to sign in');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+    
     try {
       setIsLoading(true);
-      
-      const isValid = await verifyOTP(email, otp);
-      
-      if (!isValid) {
-        throw new Error('Invalid OTP or OTP expired');
-      }
-      
-      // Sign in with Supabase using OTP verification result
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: activeTab === 'signup',
-        },
-      });
-
-      if (error) throw error;
-      
-      toast.success('Successfully logged in');
-      navigate('/dashboard');
-      onClose();
+      await signUp(email, password, { name: email.split('@')[0] });
+      toast.success('Account created successfully! You can now sign in.');
+      setActiveTab('login');
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to sign up');
     } finally {
       setIsLoading(false);
     }
@@ -77,8 +67,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   const resetForm = () => {
     setEmail('');
-    setOtp('');
-    setIsOtpSent(false);
+    setPassword('');
   };
 
   return (
@@ -87,117 +76,82 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <DialogHeader>
           <DialogTitle>Welcome to NearFix</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="login" value={activeTab} onValueChange={(val) => {
+          setActiveTab(val);
+          resetForm();
+        }}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login" onClick={resetForm}>Login</TabsTrigger>
-            <TabsTrigger value="signup" onClick={resetForm}>Sign Up</TabsTrigger>
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
           <TabsContent value="login" className="mt-4">
             <div className="grid gap-4 py-4">
-              {!isOtpSent ? (
-                <div className="grid gap-2">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      className="pl-10"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSendOtp}
-                    disabled={isLoading || !email}
-                    className="w-full"
-                  >
-                    {isLoading ? 'Sending...' : 'Send OTP'}
-                  </Button>
+              <div className="grid gap-2">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
-              ) : (
-                <div className="grid gap-2">
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="otp"
-                      type="text"
-                      placeholder="Enter OTP"
-                      className="pl-10"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleVerifyOtp}
-                    disabled={isLoading || !otp}
-                    className="w-full"
-                  >
-                    {isLoading ? 'Verifying...' : 'Verify OTP'}
-                  </Button>
-                  <Button
-                    variant="link"
-                    onClick={() => setIsOtpSent(false)}
-                    className="w-full mt-2"
-                  >
-                    Back to email
-                  </Button>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    className="pl-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
-              )}
+                <Button
+                  onClick={handleSignIn}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="signup" className="mt-4">
             <div className="grid gap-4 py-4">
-              {!isOtpSent ? (
-                <div className="grid gap-2">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      className="pl-10"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSendOtp}
-                    disabled={isLoading || !email}
-                    className="w-full"
-                  >
-                    {isLoading ? 'Sending...' : 'Send OTP'}
-                  </Button>
+              <div className="grid gap-2">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
-              ) : (
-                <div className="grid gap-2">
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="otp"
-                      type="text"
-                      placeholder="Enter OTP"
-                      className="pl-10"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleVerifyOtp}
-                    disabled={isLoading || !otp}
-                    className="w-full"
-                  >
-                    {isLoading ? 'Verifying...' : 'Verify OTP'}
-                  </Button>
-                  <Button
-                    variant="link"
-                    onClick={() => setIsOtpSent(false)}
-                    className="w-full mt-2"
-                  >
-                    Back to email
-                  </Button>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Create a password"
+                    className="pl-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
-              )}
+                <Button
+                  onClick={handleSignUp}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

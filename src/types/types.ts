@@ -29,7 +29,7 @@ export interface Job {
   location: string;
   budget: number;
   email?: string;
-  Phone_Number?: string; // Match database field name
+  Phone_Number?: string;
   status: string;
   created_at: string;
   updated_at?: string;
@@ -56,7 +56,7 @@ export interface JobPostingForm {
   category: string;
   location: string;
   budget: number;
-  Phone_Number?: string; // Match database field name
+  Phone_Number?: string;
   email?: string;
   user_id: string; // Required for database compatibility
 }

@@ -1,210 +1,270 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-
-const initialFormState = {
-  title: '',
-  description: '',
-  category: '',
-  location: '',
-  budget: 0,
-  Phone_Number: '',
-  email: '',
-  user_id: '' // Will be populated with the current user's ID
-};
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 
 const PostJob = () => {
-  const { user } = useAuth();
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState({
+    title: '',
+    serviceType: '',
+    description: '',
+    address: '',
+    city: '',
+    pincode: '',
+    timing: '',
+    budgetRange: '',
+    name: '',
+    phone: '',
+    email: '',
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { showAuthModal, setShowAuthModal } = useAuthCheck();
 
-  // Update formData when user changes
-  React.useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        user_id: user.id,
-        email: user.email || ''
-      }));
-    }
-  }, [user]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'budget' ? parseFloat(value) || 0 : value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      toast.error('You must be logged in to post a job');
-      return;
-    }
-    
     setIsSubmitting(true);
 
     try {
-      // Insert job directly into job_postings table
-      const { error } = await supabase.from('job_postings').insert([{
+      if (!user) {
+        toast.error("You must be logged in to post a job");
+        setShowAuthModal(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const data = {
         user_id: user.id,
         title: formData.title,
         description: formData.description,
-        category: formData.category,
-        location: formData.location,
-        budget: formData.budget,
-        Phone_Number: formData.Phone_Number ? formData.Phone_Number : null,
-        email: formData.email || user.email
-      }]);
+        category: formData.serviceType,
+        location: `${formData.address}, ${formData.city}, ${formData.pincode}`,
+        budget: parseFloat(formData.budgetRange),
+        Phone_Number: formData.phone,
+        email: formData.email
+      };
+
+      const { error } = await supabase.from('job_postings').insert(data);
 
       if (error) throw error;
-      
-      toast.success('Job posted successfully!');
-      setFormData(initialFormState); // Reset form
+
+      // Success response handling
+      toast.success("Job posted successfully");
+      navigate('/job-confirmation');
     } catch (error) {
-      console.error('Error posting job:', error);
-      toast.error('Failed to post job. Please try again.');
+      console.error("Error posting job:", error);
+      toast.error("Failed to post job. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Post a New Job</h1>
-      
-      <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6 max-w-2xl mx-auto">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
-            Job Title
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="title"
-            name="title"
-            type="text"
-            value={formData.title}
-            onChange={handleChange}
-            required
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Authentication Required</DialogTitle>
+          </DialogHeader>
+          <p>You must sign in to post a job.</p>
+        </DialogContent>
+      </Dialog>
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <img
+            className="mx-auto h-12 w-auto"
+            src="/placeholder.svg"
+            alt="NearFix"
           />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
-            Category
-          </label>
-          <select
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select a category</option>
-            <option value="Plumbing">Plumbing</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Carpentry">Carpentry</option>
-            <option value="Cleaning">Cleaning</option>
-            <option value="Painting">Painting</option>
-            <option value="Moving">Moving</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
-            Description
-          </label>
-          <textarea
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="description"
-            name="description"
-            rows={4}
-            value={formData.description}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="location">
-            Location
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="location"
-            name="location"
-            type="text"
-            value={formData.location}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="budget">
-            Budget (USD)
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="budget"
-            name="budget"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.budget}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="Phone_Number">
-            Phone Number
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="Phone_Number"
-            name="Phone_Number"
-            type="tel"
-            value={formData.Phone_Number}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-            Contact Email
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          <p className="text-gray-500 text-xs italic mt-1">
-            If left blank, your account email will be used.
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Post a Job
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Let us know what you need and we&apos;ll find the right professional for you.
           </p>
         </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <Label htmlFor="title" className="sr-only">Job Title</Label>
+              <Input
+                id="title"
+                name="title"
+                type="text"
+                autoComplete="off"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Job Title"
+                value={formData.title}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="serviceType" className="sr-only">Service Type</Label>
+              <Select onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}>
+                <SelectTrigger className="w-full text-left appearance-none rounded-none relative block px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm">
+                  <SelectValue placeholder="Select a service type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Plumbing">Plumbing</SelectItem>
+                  <SelectItem value="Electrical">Electrical</SelectItem>
+                  <SelectItem value="Carpentry">Carpentry</SelectItem>
+                  <SelectItem value="Painting">Painting</SelectItem>
+                  <SelectItem value="Cleaning">Cleaning</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="description" className="sr-only">Job Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                rows={3}
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Job Description"
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="address" className="sr-only">Address</Label>
+              <Input
+                id="address"
+                name="address"
+                type="text"
+                autoComplete="off"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="city" className="sr-only">City</Label>
+              <Input
+                id="city"
+                name="city"
+                type="text"
+                autoComplete="off"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="City"
+                value={formData.city}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pincode" className="sr-only">Pincode</Label>
+              <Input
+                id="pincode"
+                name="pincode"
+                type="text"
+                autoComplete="off"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Pincode"
+                value={formData.pincode}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="timing" className="sr-only">Preferred Timing</Label>
+              <Input
+                id="timing"
+                name="timing"
+                type="text"
+                autoComplete="off"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Preferred Timing"
+                value={formData.timing}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="budgetRange" className="sr-only">Budget Range</Label>
+              <Input
+                id="budgetRange"
+                name="budgetRange"
+                type="text"
+                autoComplete="off"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Budget Range"
+                value={formData.budgetRange}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="name" className="sr-only">Your Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="off"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Your Name"
+                value={formData.name}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone" className="sr-only">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="text"
+                autoComplete="off"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Phone Number"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="email" className="sr-only">Email address</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
 
-        <div className="flex items-center justify-between">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="submit"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Posting...' : 'Post Job'}
-          </button>
-        </div>
-      </form>
+          <div>
+            <Button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Posting...' : 'Post Job'}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
