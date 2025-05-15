@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,14 +51,17 @@ const PostJob = () => {
         return;
       }
 
+      // Fixed type issue: Convert phone to number if provided, otherwise set to null
+      const phoneNumber = formData.phone ? parseFloat(formData.phone) : null;
+
       const data = {
         user_id: user.id,
         title: formData.title,
         description: formData.description,
         category: formData.serviceType,
         location: `${formData.address}, ${formData.city}, ${formData.pincode}`,
-        budget: parseFloat(formData.budgetRange),
-        Phone_Number: formData.phone,
+        budget: parseFloat(formData.budgetRange) || null,
+        Phone_Number: phoneNumber,
         email: formData.email
       };
 
