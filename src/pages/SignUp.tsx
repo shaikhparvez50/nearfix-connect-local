@@ -1,11 +1,12 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FormData {
   name: string;
@@ -13,6 +14,11 @@ interface FormData {
   password: string;
   confirmPassword: string;
   role: 'buyer' | 'seller';
+}
+
+interface LocationState {
+  from?: string;
+  needsCompletion?: boolean;
 }
 
 const SignUp = () => {
@@ -26,6 +32,27 @@ const SignUp = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const state = location.state as LocationState;
+  
+  // Check if the user was redirected here to complete registration
+  const needsCompletion = state?.needsCompletion;
+  
+  // If user is already logged in and redirected to complete registration
+  useEffect(() => {
+    if (user && needsCompletion) {
+      toast.info("Please complete your registration to continue");
+      // Pre-fill email if user already exists
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || "",
+      }));
+    } else if (user && !needsCompletion) {
+      // Redirect to dashboard if user is already logged in and registration is complete
+      navigate("/dashboard");
+    }
+  }, [user, needsCompletion, navigate]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,6 +80,27 @@ const SignUp = () => {
     }
     
     try {
+      // If user exists but needs to complete registration
+      if (user && needsCompletion) {
+        // Just update the profile with the additional information
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            name: formData.name,
+            email: user.email || formData.email,
+            role: formData.role
+          });
+          
+        if (profileError) throw profileError;
+        
+        toast.success(`Profile completed successfully!`);
+        // Redirect to the original page the user was trying to access
+        navigate(state?.from || "/dashboard");
+        return;
+      }
+      
+      // Regular sign up flow for new users
       // First, check if user already exists
       const { data: existingUsers } = await supabase
         .from('profiles')
@@ -63,6 +111,7 @@ const SignUp = () => {
       if (existingUsers && existingUsers.length > 0) {
         toast.error("This email is already registered. Please sign in instead.");
         setIsLoading(false);
+        setTimeout(() => navigate('/signin'), 2000);
         return;
       }
       

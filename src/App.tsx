@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicRoute from "@/components/PublicRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PostJob from "./pages/PostJob";
@@ -37,7 +38,16 @@ const App = () => {
             <Sonner />
             <HotToaster />
             <Routes>
-              <Route path="/" element={<Index />} />
+              {/* Public Routes */}
+              <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
+              <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
+              <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
+              <Route path="/about" element={<PublicRoute><AboutUs /></PublicRoute>} />
+              <Route path="/contact" element={<PublicRoute><ContactUs /></PublicRoute>} />
+              <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
+              <Route path="/how-it-works" element={<PublicRoute><HowItWorks /></PublicRoute>} />
+              
+              {/* Protected Routes - Require authentication and registration */}
               <Route path="/post-job" element={
                 <ProtectedRoute>
                   <PostJob />
@@ -53,14 +63,16 @@ const App = () => {
                   <SearchResults />
                 </ProtectedRoute>
               } />
-              <Route path="/job-confirmation" element={<JobConfirmation />} />
-              <Route path="/seller-confirmation" element={<SellerConfirmation />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/contact" element={<ContactUs />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/job-confirmation" element={
+                <ProtectedRoute>
+                  <JobConfirmation />
+                </ProtectedRoute>
+              } />
+              <Route path="/seller-confirmation" element={
+                <ProtectedRoute>
+                  <SellerConfirmation />
+                </ProtectedRoute>
+              } />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />

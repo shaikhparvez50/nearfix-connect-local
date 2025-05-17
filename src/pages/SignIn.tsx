@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signIn } = useAuth();
+  const { user, signIn, isUserSignedUp, checkUserRegistration } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,10 +21,24 @@ export default function SignIn() {
   const from = location.state?.from || '/dashboard';
 
   useEffect(() => {
-    if (user) {
-      navigate(from, { replace: true });
-    }
-  }, [user, navigate, from]);
+    const handleUserStatus = async () => {
+      if (user) {
+        // Check if the user is fully registered
+        const isRegistered = await checkUserRegistration();
+        
+        if (isRegistered) {
+          // If registered, proceed to the requested page
+          navigate(from, { replace: true });
+        } else {
+          // If not registered, redirect to complete registration
+          navigate('/signup', { state: { from, needsCompletion: true } });
+          toast.warning("Please complete your registration to continue");
+        }
+      }
+    };
+    
+    handleUserStatus();
+  }, [user, navigate, from, checkUserRegistration, isUserSignedUp]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,12 +60,22 @@ export default function SignIn() {
       if (!profileData || profileData.length === 0) {
         toast.error('Email not found. Please sign up first.');
         setIsLoading(false);
+        setTimeout(() => navigate('/signup'), 1500);
         return;
       }
       
       await signIn(email, password);
       toast.success('Successfully logged in');
-      navigate(from, { replace: true });
+      
+      // After signing in, check registration status before navigating
+      const isRegistered = await checkUserRegistration();
+      
+      if (isRegistered) {
+        navigate(from, { replace: true });
+      } else {
+        navigate('/signup', { state: { from, needsCompletion: true } });
+        toast.warning("Please complete your registration to continue");
+      }
     } catch (error: any) {
       console.error("Sign-in error:", error);
       

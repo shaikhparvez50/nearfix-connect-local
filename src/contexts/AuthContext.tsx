@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -23,6 +22,7 @@ type AuthContextType = {
   postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;
   isUserSignedUp: boolean;
   userRole: string | null;
+  checkUserRegistration: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,18 +44,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Check if user has role info
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (profileData?.role) {
-            setUserRole(profileData.role);
-            setIsUserSignedUp(true);
-          } else {
-            setIsUserSignedUp(false);
-          }
+          setTimeout(async () => {
+            await checkUserRegistration();
+          }, 0);
+        } else {
+          setIsUserSignedUp(false);
+          setUserRole(null);
         }
       }
     );
@@ -66,24 +60,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Check if user has role info
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profileData?.role) {
-          setUserRole(profileData.role);
-          setIsUserSignedUp(true);
-        } else {
-          setIsUserSignedUp(false);
-        }
+        await checkUserRegistration();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
+
+  const checkUserRegistration = async (): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // Check if user has role info
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (error || !profileData?.role) {
+        console.log("User registration check failed:", error || "No role found");
+        setUserRole(null);
+        setIsUserSignedUp(false);
+        return false;
+      }
+      
+      setUserRole(profileData.role);
+      setIsUserSignedUp(true);
+      return true;
+    } catch (error) {
+      console.error("Error checking user registration:", error);
+      setUserRole(null);
+      setIsUserSignedUp(false);
+      return false;
+    }
+  };
 
   const requestLocationPermission = async (): Promise<boolean> => {
     if (!navigator.geolocation) {
@@ -148,6 +159,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       throw error;
     }
+    
+    // Check user registration after sign in
+    await checkUserRegistration();
   };
 
   const signUp = async (email: string, password: string, metadata: { name: string; role?: string }) => {
@@ -211,6 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       postJob,
       isUserSignedUp,
       userRole,
+      checkUserRegistration,
     }}>
       {children}
     </AuthContext.Provider>
