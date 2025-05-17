@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
   LayoutDashboard, Briefcase, Users, MessageSquare, Settings, 
-  Calendar, MapPin, DollarSign, Search, ChevronRight, Clock 
+  Calendar, MapPin, DollarSign, Search, ChevronRight, Clock,
+  User // Add this import from lucide-react
 } from 'lucide-react';
 
 // Define our own local types to avoid conflicts with imported ones
