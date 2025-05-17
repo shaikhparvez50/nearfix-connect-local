@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
@@ -82,6 +81,9 @@ const SignUp = () => {
     try {
       // If user exists but needs to complete registration
       if (user && needsCompletion) {
+        // First refresh the session to ensure we have valid tokens
+        await supabase.auth.refreshSession();
+        
         // Insert or update the profile - use upsert to avoid RLS issues
         const { error: profileError } = await supabase
           .from('profiles')
@@ -97,36 +99,19 @@ const SignUp = () => {
         if (profileError) {
           console.error("Profile error:", profileError);
           
-          // If RLS policy violation, try another approach - let's try again
+          // If RLS policy violation, try another approach using a stored procedure or function
           if (profileError.message.includes("violates row-level security policy")) {
-            // Try again using a different approach
-            try {
-              // Create a new session to ensure latest auth state
-              const { data: sessionData } = await supabase.auth.getSession();
-              
-              if (sessionData.session) {
-                // Using the current authenticated session
-                const { error: secondAttemptError } = await supabase
-                  .from('profiles')
-                  .upsert({
-                    id: user.id,
-                    name: formData.name,
-                    email: user.email || formData.email,
-                    role: formData.role
-                  }, { 
-                    onConflict: 'id'
-                    // Remove 'returning' option as it's not supported in the type definition
-                  });
-                  
-                if (secondAttemptError) {
-                  throw secondAttemptError;
-                }
-              } else {
-                throw new Error("No active session found");
-              }
-            } catch (retryError) {
-              console.error("Profile creation retry failed:", retryError);
-              throw retryError;
+            // Try using a stored function that bypasses RLS
+            const { data: result, error: funcError } = await supabase.rpc('create_or_update_profile', {
+              user_id: user.id,
+              user_name: formData.name,
+              user_email: user.email || formData.email,
+              user_role: formData.role
+            });
+            
+            if (funcError) {
+              console.error("Function error:", funcError);
+              throw funcError;
             }
           } else {
             throw profileError;
@@ -181,42 +166,9 @@ const SignUp = () => {
       
       // 2. Create a profile record with additional information
       if (authData.user) {
-        try {
-          // Use upsert instead of insert to handle potential RLS issues
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: authData.user.id,
-              name: formData.name,
-              email: formData.email,
-              role: formData.role
-            }, {
-              onConflict: 'id'
-            });
-            
-          if (profileError) {
-            console.error("Profile creation error:", profileError);
-            
-            // If RLS policy violation, we need to tell the user to log in first
-            if (profileError.message.includes("violates row-level security policy")) {
-              toast.success(
-                `Account created! Please sign in to complete your profile setup.`
-              );
-              navigate("/signin");
-              return;
-            }
-            
-            throw profileError;
-          }
-        } catch (profileCreateError) {
-          console.error("Error during profile creation:", profileCreateError);
-          // Continue with sign up process even if profile creation fails
-          // The user can complete their profile later
-        }
+        toast.success(`Account created successfully! You can now sign in as a ${formData.role}.`);
+        navigate("/signin");
       }
-      
-      toast.success(`Account created successfully! You can now sign in as a ${formData.role}.`);
-      navigate("/signin");
     } catch (err: any) {
       console.error("Error during signup:", err);
       

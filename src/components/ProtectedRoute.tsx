@@ -24,11 +24,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
       try {
         // Check if the user has a profile in the database
+        // Use maybeSingle instead of single to avoid errors
         const { data, error } = await supabase
           .from('profiles')
           .select('id, role')
           .eq('id', user.id)
-          .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no record is found
+          .maybeSingle();
 
         if (error) {
           console.error("Error checking user registration:", error);
