@@ -30,10 +30,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           .eq('id', user.id)
           .single();
 
-        if (error || !data) {
+        if (error) {
           console.error("Error checking user registration:", error);
           setIsRegistered(false);
+        } else if (!data) {
+          console.log("No profile found for user, redirecting to signup");
+          setIsRegistered(false);
         } else {
+          console.log("User profile found:", data);
           setIsRegistered(true);
         }
       } catch (err) {

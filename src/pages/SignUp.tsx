@@ -33,7 +33,7 @@ const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, checkUserRegistration } = useAuth();
   const state = location.state as LocationState;
   
   // Check if the user was redirected here to complete registration
@@ -82,7 +82,7 @@ const SignUp = () => {
     try {
       // If user exists but needs to complete registration
       if (user && needsCompletion) {
-        // Just update the profile with the additional information
+        // Insert or update the profile - use upsert to avoid RLS issues
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
@@ -90,9 +90,17 @@ const SignUp = () => {
             name: formData.name,
             email: user.email || formData.email,
             role: formData.role
+          }, {
+            onConflict: 'id'
           });
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile error:", profileError);
+          throw profileError;
+        }
+        
+        // Re-check user registration to update context
+        await checkUserRegistration();
         
         toast.success(`Profile completed successfully!`);
         // Redirect to the original page the user was trying to access
@@ -139,16 +147,22 @@ const SignUp = () => {
       
       // 2. Create a profile record with additional information
       if (authData.user) {
+        // Use upsert instead of insert to handle potential RLS issues
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             id: authData.user.id,
             name: formData.name,
             email: formData.email,
             role: formData.role
+          }, {
+            onConflict: 'id'
           });
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          throw profileError;
+        }
       }
       
       toast.success(`Account created successfully! You can now sign in as a ${formData.role}.`);
