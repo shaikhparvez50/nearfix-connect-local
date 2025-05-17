@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
@@ -113,8 +114,8 @@ const SignUp = () => {
                     email: user.email || formData.email,
                     role: formData.role
                   }, { 
-                    onConflict: 'id',
-                    returning: 'minimal' // Don't need to return the row
+                    onConflict: 'id'
+                    // Remove 'returning' option as it's not supported in the type definition
                   });
                   
                 if (secondAttemptError) {
