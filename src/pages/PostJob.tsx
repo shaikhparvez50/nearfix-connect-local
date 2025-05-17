@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Briefcase, Clock, MapPin, DollarSign, User, Phone, Mail, Send } from 'lucide-react';
 
 const PostJob = () => {
   const [formData, setFormData] = useState({
@@ -90,184 +92,233 @@ const PostJob = () => {
           <p>You must sign in to post a job.</p>
         </DialogContent>
       </Dialog>
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <img
-            className="mx-auto h-12 w-auto"
-            src="/placeholder.svg"
-            alt="NearFix"
-          />
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Post a Job
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Let us know what you need and we&apos;ll find the right professional for you.
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <Label htmlFor="title" className="sr-only">Job Title</Label>
-              <Input
-                id="title"
-                name="title"
-                type="text"
-                autoComplete="off"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Job Title"
-                value={formData.title}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="serviceType" className="sr-only">Service Type</Label>
-              <Select onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}>
-                <SelectTrigger className="w-full text-left appearance-none rounded-none relative block px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm">
-                  <SelectValue placeholder="Select a service type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Plumbing">Plumbing</SelectItem>
-                  <SelectItem value="Electrical">Electrical</SelectItem>
-                  <SelectItem value="Carpentry">Carpentry</SelectItem>
-                  <SelectItem value="Painting">Painting</SelectItem>
-                  <SelectItem value="Cleaning">Cleaning</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="description" className="sr-only">Job Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={3}
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Job Description"
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="address" className="sr-only">Address</Label>
-              <Input
-                id="address"
-                name="address"
-                type="text"
-                autoComplete="off"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Address"
-                value={formData.address}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="city" className="sr-only">City</Label>
-              <Input
-                id="city"
-                name="city"
-                type="text"
-                autoComplete="off"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="City"
-                value={formData.city}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="pincode" className="sr-only">Pincode</Label>
-              <Input
-                id="pincode"
-                name="pincode"
-                type="text"
-                autoComplete="off"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Pincode"
-                value={formData.pincode}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="timing" className="sr-only">Preferred Timing</Label>
-              <Input
-                id="timing"
-                name="timing"
-                type="text"
-                autoComplete="off"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Preferred Timing"
-                value={formData.timing}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="budgetRange" className="sr-only">Budget Range</Label>
-              <Input
-                id="budgetRange"
-                name="budgetRange"
-                type="text"
-                autoComplete="off"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Budget Range"
-                value={formData.budgetRange}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="name" className="sr-only">Your Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="off"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="phone" className="sr-only">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="text"
-                autoComplete="off"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Phone Number"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="email" className="sr-only">Email address</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
 
-          <div>
-            <Button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Posting...' : 'Post Job'}
-            </Button>
-          </div>
-        </form>
+      <div className="w-full max-w-2xl">
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
+            <div className="mx-auto text-center mb-2">
+              <img
+                className="h-14 w-auto"
+                src="/placeholder.svg"
+                alt="NearFix"
+              />
+            </div>
+            <CardTitle className="text-3xl font-bold text-center">Post a Job</CardTitle>
+            <CardDescription className="text-blue-100 text-center">
+              Let us know what you need and we'll find the right professional for you
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="font-medium">Job Title</Label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="title"
+                      name="title"
+                      type="text"
+                      autoComplete="off"
+                      required
+                      className="pl-10"
+                      placeholder="e.g. Fix leaking sink"
+                      value={formData.title}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="serviceType" className="font-medium">Service Type</Label>
+                  <Select onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}>
+                    <SelectTrigger className="w-full pl-10 relative">
+                      <div className="absolute left-3 top-3">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <SelectValue placeholder="Select a service type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Plumbing">Plumbing</SelectItem>
+                      <SelectItem value="Electrical">Electrical</SelectItem>
+                      <SelectItem value="Carpentry">Carpentry</SelectItem>
+                      <SelectItem value="Painting">Painting</SelectItem>
+                      <SelectItem value="Cleaning">Cleaning</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description" className="font-medium">Job Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  required
+                  className="resize-none"
+                  placeholder="Please provide details about the job, requirements, and any specific instructions"
+                  value={formData.description}
+                  onChange={handleChange}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="font-medium">Address</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="address"
+                      name="address"
+                      type="text"
+                      autoComplete="off"
+                      required
+                      className="pl-10"
+                      placeholder="Street address"
+                      value={formData.address}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="font-medium">City</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    type="text"
+                    autoComplete="off"
+                    required
+                    placeholder="City"
+                    value={formData.city}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="pincode" className="font-medium">Pincode</Label>
+                  <Input
+                    id="pincode"
+                    name="pincode"
+                    type="text"
+                    autoComplete="off"
+                    required
+                    placeholder="Postal code"
+                    value={formData.pincode}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="timing" className="font-medium">Preferred Timing</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="timing"
+                      name="timing"
+                      type="text"
+                      autoComplete="off"
+                      className="pl-10"
+                      placeholder="e.g. Weekdays after 5PM"
+                      value={formData.timing}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="budgetRange" className="font-medium">Budget Range</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="budgetRange"
+                    name="budgetRange"
+                    type="text"
+                    autoComplete="off"
+                    className="pl-10"
+                    placeholder="Your budget for this job"
+                    value={formData.budgetRange}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+                <h3 className="text-lg font-medium text-blue-800">Contact Information</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="font-medium">Your Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="name"
+                        name="name"
+                        type="text"
+                        autoComplete="off"
+                        className="pl-10"
+                        placeholder="Full name"
+                        value={formData.name}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="font-medium">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="text"
+                        autoComplete="off"
+                        className="pl-10"
+                        placeholder="Contact number"
+                        value={formData.phone}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="font-medium">Email address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      className="pl-10"
+                      placeholder="Your email address"
+                      value={formData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <CardFooter className="px-0 pt-4">
+                <Button
+                  type="submit"
+                  className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md transition-colors"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Posting...' : 'Post Job'}
+                  <Send className="ml-2 h-5 w-5" />
+                </Button>
+              </CardFooter>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
