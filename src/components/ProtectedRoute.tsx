@@ -28,7 +28,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           .from('profiles')
           .select('id, role')
           .eq('id', user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no record is found
 
         if (error) {
           console.error("Error checking user registration:", error);

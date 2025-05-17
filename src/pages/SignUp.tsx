@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
@@ -96,7 +95,41 @@ const SignUp = () => {
           
         if (profileError) {
           console.error("Profile error:", profileError);
-          throw profileError;
+          
+          // If RLS policy violation, try another approach - let's try again
+          if (profileError.message.includes("violates row-level security policy")) {
+            // Try again using a different approach
+            try {
+              // Create a new session to ensure latest auth state
+              const { data: sessionData } = await supabase.auth.getSession();
+              
+              if (sessionData.session) {
+                // Using the current authenticated session
+                const { error: secondAttemptError } = await supabase
+                  .from('profiles')
+                  .upsert({
+                    id: user.id,
+                    name: formData.name,
+                    email: user.email || formData.email,
+                    role: formData.role
+                  }, { 
+                    onConflict: 'id',
+                    returning: 'minimal' // Don't need to return the row
+                  });
+                  
+                if (secondAttemptError) {
+                  throw secondAttemptError;
+                }
+              } else {
+                throw new Error("No active session found");
+              }
+            } catch (retryError) {
+              console.error("Profile creation retry failed:", retryError);
+              throw retryError;
+            }
+          } else {
+            throw profileError;
+          }
         }
         
         // Re-check user registration to update context
@@ -147,21 +180,37 @@ const SignUp = () => {
       
       // 2. Create a profile record with additional information
       if (authData.user) {
-        // Use upsert instead of insert to handle potential RLS issues
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: authData.user.id,
-            name: formData.name,
-            email: formData.email,
-            role: formData.role
-          }, {
-            onConflict: 'id'
-          });
-          
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-          throw profileError;
+        try {
+          // Use upsert instead of insert to handle potential RLS issues
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: authData.user.id,
+              name: formData.name,
+              email: formData.email,
+              role: formData.role
+            }, {
+              onConflict: 'id'
+            });
+            
+          if (profileError) {
+            console.error("Profile creation error:", profileError);
+            
+            // If RLS policy violation, we need to tell the user to log in first
+            if (profileError.message.includes("violates row-level security policy")) {
+              toast.success(
+                `Account created! Please sign in to complete your profile setup.`
+              );
+              navigate("/signin");
+              return;
+            }
+            
+            throw profileError;
+          }
+        } catch (profileCreateError) {
+          console.error("Error during profile creation:", profileCreateError);
+          // Continue with sign up process even if profile creation fails
+          // The user can complete their profile later
         }
       }
       
