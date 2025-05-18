@@ -21,7 +21,8 @@ import {
   Compass, 
   DatabaseBackup,
   Smartphone,
-  Store
+  Store,
+  HandShake
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -143,11 +144,11 @@ export function AppSidebar() {
                 <SidebarMenuButton 
                   asChild 
                   isActive={isActive('/create-shop')}
-                  tooltip="Post a Shop"
+                  tooltip="Offer Your Service"
                 >
                   <button onClick={() => navigate('/become-seller')}>
                     <Store />
-                    <span>Post Your Shop</span>
+                    <span>Offer Your Service</span>
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
