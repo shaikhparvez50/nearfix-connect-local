@@ -97,13 +97,28 @@ const PostJob = () => {
     setMessage('');
     const timestamp = new Date().toISOString();
 
-    const { error } = await supabase.from('job_postings').insert([
-      {
-        ...formData,
-        created_at: timestamp,
-        updated_at: timestamp,
-      },
-    ]);
+    // Ensure all required fields are present and properly typed
+    if (!formData.title || !formData.description || !formData.category || 
+        !formData.location || !formData.user_id) {
+      setMessage('❌ All required fields must be filled');
+      setLoading(false);
+      return;
+    }
+
+    // Create a properly typed object for insertion
+    const jobData = {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      location: formData.location,
+      user_id: formData.user_id,
+      budget: formData.budget || null,
+      status: formData.status || 'open',
+      created_at: timestamp,
+      updated_at: timestamp
+    };
+
+    const { error } = await supabase.from('job_postings').insert([jobData]);
 
     if (error) {
       setMessage(`❌ Error: ${error.message}`);
