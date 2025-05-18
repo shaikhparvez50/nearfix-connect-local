@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -19,7 +20,8 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata: { name: string; role?: string }) => Promise<void>;
   signOut: () => Promise<void>;
-  postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;  // Add postJob function signature
+  postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;
+  isLoading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setIsLoading(false);
         
         // If user is logged in, redirect to dashboard
         if (session?.user && window.location.pathname === '/') {
@@ -48,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsLoading(false);
       
       // If user is logged in and on the homepage, redirect to dashboard
       if (session?.user && window.location.pathname === '/') {
@@ -147,20 +152,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const postJob = async (formData: any) => {
     try {
-      // Insert job details into Supabase (or your backend of choice)
-      const { error } = await supabase.from('jobs').insert([
+      // Insert job details into Supabase
+      const { error } = await supabase.from('job_postings').insert([
         {
+          user_id: user?.id,
           title: formData.title,
-          service_type: formData.serviceType,
+          category: formData.serviceType,
           description: formData.description,
-          address: formData.address,
-          city: formData.city,
-          pincode: formData.pincode,
-          timing: formData.timing,
-          budget_range: formData.budgetRange,
-          name: formData.name,
-          phone: formData.phone,
+          location: `${formData.city}, ${formData.address}`,
+          budget: formData.budgetRange,
           email: formData.email,
+          Phone_Number: formData.phone,
         },
       ]);
 
@@ -170,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Return success response
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error posting job:", error);
       return { success: false, error: error.message };
     }
@@ -186,7 +188,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signUp,
       signOut,
-      postJob // Provide the postJob function here
+      postJob,
+      isLoading
     }}>
       {children}
     </AuthContext.Provider>

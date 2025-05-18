@@ -45,8 +45,10 @@ export type Database = {
           category: string
           created_at: string
           description: string
+          email: string | null
           id: string
           location: string
+          Phone_Number: number | null
           status: string
           title: string
           updated_at: string
@@ -57,8 +59,10 @@ export type Database = {
           category: string
           created_at?: string
           description: string
+          email?: string | null
           id?: string
           location: string
+          Phone_Number?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -69,27 +73,14 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string
+          email?: string | null
           id?: string
           location?: string
+          Phone_Number?: number | null
           status?: string
           title?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      "Near fix": {
-        Row: {
-          created_at: string
-          id: number
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-        }
-        Update: {
-          created_at?: string
-          id?: number
         }
         Relationships: []
       }

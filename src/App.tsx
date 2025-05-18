@@ -19,6 +19,7 @@ import ContactUs from "./pages/ContactUs";
 import Services from "./pages/Services";
 import HowItWorks from "./pages/HowItWorks";
 import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useState } from "react";
 
 const App = () => {
@@ -32,19 +33,25 @@ const App = () => {
             <Toaster />
             <Sonner />
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<Index />} />
-              <Route path="/post-job" element={<PostJob />} />
-              <Route path="/become-seller" element={<BecomeSeller />} />
               <Route path="/search" element={<SearchResults />} />
-              <Route path="/job-confirmation" element={<JobConfirmation />} />
-              <Route path="/seller-confirmation" element={<SellerConfirmation />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/services" element={<Services />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              
+              {/* Protected routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/post-job" element={<PostJob />} />
+                <Route path="/become-seller" element={<BecomeSeller />} />
+                <Route path="/job-confirmation" element={<JobConfirmation />} />
+                <Route path="/seller-confirmation" element={<SellerConfirmation />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+              </Route>
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
