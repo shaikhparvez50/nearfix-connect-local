@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,23 +6,12 @@ import {
   X, 
   User,
   Plus,
-  Search,
-  LogOut
+  Search
 } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
@@ -46,14 +34,6 @@ const Navbar = () => {
             <Link to="/contact" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
               Contact
             </Link>
-            <Link to="/search-services" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
-              Search
-            </Link>
-            {user && (
-              <Link to="/dashboard" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
-                Dashboard
-              </Link>
-            )}
           </nav>
         </div>
         
@@ -74,26 +54,11 @@ const Navbar = () => {
             </Button>
           </Link>
           
-          {user ? (
-            <div className="hidden md:flex items-center space-x-2">
-              <Link to="/dashboard">
-                <Button variant="ghost" size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          ) : (
-            <Link to="/signin">
-              <Button variant="ghost" size="icon" className="hidden md:inline-flex">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
-          )}
+          <Link to="/signin">
+            <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+              <User className="h-5 w-5" />
+            </Button>
+          </Link>
           
           <Button
             variant="ghost"
@@ -137,15 +102,6 @@ const Navbar = () => {
             >
               Contact
             </Link>
-            {user && (
-              <Link
-                to="/dashboard"
-                className="block w-full p-2 text-left rounded-md hover:bg-nearfix-50"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-            )}
             <div className="pt-2 flex items-center">
               <LanguageSwitcher />
             </div>
@@ -162,35 +118,12 @@ const Navbar = () => {
                   Post a Job
                 </Button>
               </Link>
-              
-              {user ? (
-                <>
-                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="secondary" className="w-full justify-start">
-                      <User className="h-4 w-4 mr-2" />
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-red-500 border-red-200 hover:bg-red-50"
-                    onClick={() => {
-                      handleSignOut();
-                      setIsMenuOpen(false);
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </Button>
-                </>
-              ) : (
-                <Link to="/signin" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="secondary" className="w-full justify-start">
-                    <User className="h-4 w-4 mr-2" />
-                    Login / Sign Up
-                  </Button>
-                </Link>
-              )}
+              <Link to="/signin" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="secondary" className="w-full justify-start">
+                  <User className="h-4 w-4 mr-2" />
+                  Login / Sign Up
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

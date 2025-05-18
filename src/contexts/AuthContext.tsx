@@ -19,82 +19,44 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata: { name: string; role?: string }) => Promise<void>;
   signOut: () => Promise<void>;
-  postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;
-  isUserSignedUp: boolean;
-  userRole: string | null;
-  checkUserRegistration: () => Promise<boolean>;
+  postJob: (formData: any) => Promise<{ success: boolean, error?: string }>;  // Add postJob function signature
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-  const [isUserSignedUp, setIsUserSignedUp] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Check if user has role info
-          setTimeout(async () => {
-            await checkUserRegistration();
-          }, 0);
-        } else {
-          setIsUserSignedUp(false);
-          setUserRole(null);
+        // If user is logged in, redirect to dashboard
+        if (session?.user && window.location.pathname === '/') {
+          navigate('/dashboard');
         }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
-        await checkUserRegistration();
+      // If user is logged in and on the homepage, redirect to dashboard
+      if (session?.user && window.location.pathname === '/') {
+        navigate('/dashboard');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const checkUserRegistration = async (): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      // Check if user has role info
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      
-      if (error || !profileData?.role) {
-        console.log("User registration check failed:", error || "No role found");
-        setUserRole(null);
-        setIsUserSignedUp(false);
-        return false;
-      }
-      
-      setUserRole(profileData.role);
-      setIsUserSignedUp(true);
-      return true;
-    } catch (error) {
-      console.error("Error checking user registration:", error);
-      setUserRole(null);
-      setIsUserSignedUp(false);
-      return false;
-    }
-  };
+  }, [navigate]);
 
   const requestLocationPermission = async (): Promise<boolean> => {
     if (!navigator.geolocation) {
@@ -159,9 +121,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       throw error;
     }
-    
-    // Check user registration after sign in
-    await checkUserRegistration();
   };
 
   const signUp = async (email: string, password: string, metadata: { name: string; role?: string }) => {
@@ -188,17 +147,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const postJob = async (formData: any) => {
     try {
-      // Insert job details into Supabase (using job_postings table)
-      const { error } = await supabase.from('job_postings').insert({
-        title: formData.title,
-        category: formData.serviceType, // Map service_type to category
-        description: formData.description,
-        location: `${formData.address}, ${formData.city}, ${formData.pincode}`,
-        budget: formData.budgetRange ? parseFloat(formData.budgetRange) : null,
-        Phone_Number: formData.phone ? parseInt(formData.phone) : null,
-        email: formData.email,
-        user_id: user?.id || ''
-      });
+      // Insert job details into Supabase (or your backend of choice)
+      const { error } = await supabase.from('jobs').insert([
+        {
+          title: formData.title,
+          service_type: formData.serviceType,
+          description: formData.description,
+          address: formData.address,
+          city: formData.city,
+          pincode: formData.pincode,
+          timing: formData.timing,
+          budget_range: formData.budgetRange,
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+        },
+      ]);
 
       if (error) {
         throw error;
@@ -222,15 +186,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signIn,
       signUp,
       signOut,
-      postJob,
-      isUserSignedUp,
-      userRole,
-      checkUserRegistration,
+      postJob // Provide the postJob function here
     }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

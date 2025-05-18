@@ -1,326 +1,290 @@
-
-import React, { useState } from 'react';
+// pages/PostJob.tsx
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
+import { supabase } from '../integrations/supabase/client';
+import { TablesInsert } from '../types/types';
+import MainLayout from '@/components/layout/MainLayout';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthCheck } from '@/hooks/useAuthCheck';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Briefcase, Clock, MapPin, DollarSign, User, Phone, Mail, Send } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Upload, MapPin, Calendar, ArrowRight, Info } from 'lucide-react';
 
 const PostJob = () => {
-  const [formData, setFormData] = useState({
-    title: '',
-    serviceType: '',
-    description: '',
-    address: '',
-    city: '',
-    pincode: '',
-    timing: '',
-    budgetRange: '',
-    name: '',
-    phone: '',
-    email: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { showAuthModal, setShowAuthModal } = useAuthCheck();
+  const [formData, setFormData] = useState<TablesInsert<'job_postings'>>({
+    title: '',
+    description: '',
+    category: '',
+    location: '',
+    user_id: '',
+    budget: null,
+    status: 'open',
+  });
+  const [step, setStep] = useState(1);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setFormData((prev) => ({ ...prev, user_id: user.id }));
+      } else {
+        setMessage('⚠️ Please log in to post a job.');
+      }
+    };
+    getUser();
+  }, []);
+
+  const nextStep = () => {
+    if (step === 1) {
+      if (!formData.title || !formData.category || !formData.description) {
+        setMessage('❌ Please fill in all required fields before continuing.');
+        return;
+      }
+    }
+    if (step === 2) {
+      if (!formData.location || formData.budget === null || formData.budget <= 0) {
+        setMessage('❌ Please enter location and valid budget before continuing.');
+        return;
+      }
+    }
+    setMessage('');
+    setStep((s) => Math.min(s + 1, 3));
+  };
+
+  const prevStep = () => {
+    setStep((s) => Math.max(s - 1, 1));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === 'budget' ? Number(value) || null : value,
+    }));
+    setMessage('');
+  };
+
+  const handleSelectChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setLoading(true);
+    setMessage('');
+    const timestamp = new Date().toISOString();
 
-    try {
-      if (!user) {
-        toast.error("You must be logged in to post a job");
-        setShowAuthModal(true);
-        setIsSubmitting(false);
-        return;
-      }
+    const { error } = await supabase.from('job_postings').insert([
+      {
+        ...formData,
+        created_at: timestamp,
+        updated_at: timestamp,
+      },
+    ]);
 
-      // Fixed type issue: Convert phone to number if provided, otherwise set to null
-      const phoneNumber = formData.phone ? parseFloat(formData.phone) : null;
-
-      const data = {
-        user_id: user.id,
-        title: formData.title,
-        description: formData.description,
-        category: formData.serviceType,
-        location: `${formData.address}, ${formData.city}, ${formData.pincode}`,
-        budget: parseFloat(formData.budgetRange) || null,
-        Phone_Number: phoneNumber,
-        email: formData.email
-      };
-
-      const { error } = await supabase.from('job_postings').insert(data);
-
-      if (error) throw error;
-
-      // Success response handling
-      toast.success("Job posted successfully");
+    if (error) {
+      setMessage(`❌ Error: ${error.message}`);
+    } else {
       navigate('/job-confirmation');
-    } catch (error) {
-      console.error("Error posting job:", error);
-      toast.error("Failed to post job. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Authentication Required</DialogTitle>
-          </DialogHeader>
-          <p>You must sign in to post a job.</p>
-        </DialogContent>
-      </Dialog>
-
-      <div className="w-full max-w-2xl">
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
-            <div className="mx-auto text-center mb-2">
-              <img
-                className="h-14 w-auto"
-                src="/placeholder.svg"
-                alt="NearFix"
-              />
+    <MainLayout>
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="font-heading text-3xl font-bold text-nearfix-900 mb-2">
+                Post a Job
+              </h1>
+              <p className="text-gray-600">
+                Fill in the details below to find the right service provider for your needs
+              </p>
             </div>
-            <CardTitle className="text-3xl font-bold text-center">Post a Job</CardTitle>
-            <CardDescription className="text-blue-100 text-center">
-              Let us know what you need and we'll find the right professional for you
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="title" className="font-medium">Job Title</Label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="title"
-                      name="title"
-                      type="text"
-                      autoComplete="off"
-                      required
-                      className="pl-10"
-                      placeholder="e.g. Fix leaking sink"
-                      value={formData.title}
-                      onChange={handleChange}
-                    />
-                  </div>
+
+            <Card className="border-0 shadow-md">
+              <CardHeader className="bg-nearfix-50 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Job Details</CardTitle>
+                  <div className="text-sm text-gray-500">Step {step} of 3</div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="serviceType" className="font-medium">Service Type</Label>
-                  <Select onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}>
-                    <SelectTrigger className="w-full pl-10 relative">
-                      <div className="absolute left-3 top-3">
-                        <MapPin className="h-4 w-4 text-gray-400" />
+                <CardDescription>
+                  {step === 1 && "Tell us what you need"}
+                  {step === 2 && "Location and scheduling"}
+                  {step === 3 && "Contact information"}
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit}>
+                  {step === 1 && (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Job Title</Label>
+                        <Input
+                          id="title"
+                          name="title"
+                          value={formData.title}
+                          onChange={handleChange}
+                          placeholder="E.g., Electrical wiring repair needed"
+                          required
+                        />
                       </div>
-                      <SelectValue placeholder="Select a service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Plumbing">Plumbing</SelectItem>
-                      <SelectItem value="Electrical">Electrical</SelectItem>
-                      <SelectItem value="Carpentry">Carpentry</SelectItem>
-                      <SelectItem value="Painting">Painting</SelectItem>
-                      <SelectItem value="Cleaning">Cleaning</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description" className="font-medium">Job Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  required
-                  className="resize-none"
-                  placeholder="Please provide details about the job, requirements, and any specific instructions"
-                  value={formData.description}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="font-medium">Address</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="address"
-                      name="address"
-                      type="text"
-                      autoComplete="off"
-                      required
-                      className="pl-10"
-                      placeholder="Street address"
-                      value={formData.address}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="font-medium">City</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    type="text"
-                    autoComplete="off"
-                    required
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="pincode" className="font-medium">Pincode</Label>
-                  <Input
-                    id="pincode"
-                    name="pincode"
-                    type="text"
-                    autoComplete="off"
-                    required
-                    placeholder="Postal code"
-                    value={formData.pincode}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="timing" className="font-medium">Preferred Timing</Label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="timing"
-                      name="timing"
-                      type="text"
-                      autoComplete="off"
-                      className="pl-10"
-                      placeholder="e.g. Weekdays after 5PM"
-                      value={formData.timing}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="budgetRange" className="font-medium">Budget Range</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="budgetRange"
-                    name="budgetRange"
-                    type="text"
-                    autoComplete="off"
-                    className="pl-10"
-                    placeholder="Your budget for this job"
-                    value={formData.budgetRange}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 p-4 rounded-lg space-y-4">
-                <h3 className="text-lg font-medium text-blue-800">Contact Information</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="font-medium">Your Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        autoComplete="off"
-                        className="pl-10"
-                        placeholder="Full name"
-                        value={formData.name}
-                        onChange={handleChange}
-                      />
+
+                      <div className="space-y-2">
+                        <Label htmlFor="category">Service Category</Label>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) => handleSelectChange('category', value)}
+                          required
+                        >
+                          <SelectTrigger id="category">
+                            <SelectValue placeholder="Select the type of service" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fabrication">Fabrication</SelectItem>
+                            <SelectItem value="plumbing">Plumbing</SelectItem>
+                            <SelectItem value="electrical">Electrical Work</SelectItem>
+                            <SelectItem value="tuition">Tuition</SelectItem>
+                            <SelectItem value="home-repair">Home Repair</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Job Description</Label>
+                        <Textarea
+                          id="description"
+                          name="description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          placeholder="Describe the job in detail..."
+                          rows={5}
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="font-medium">Phone Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="text"
-                        autoComplete="off"
-                        className="pl-10"
-                        placeholder="Contact number"
-                        value={formData.phone}
-                        onChange={handleChange}
-                      />
+                  )}
+
+                  {step === 2 && (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Location</Label>
+                        <div className="relative">
+                          <Input
+                            id="location"
+                            name="location"
+                            value={formData.location}
+                            onChange={handleChange}
+                            placeholder="Enter your address"
+                            className="pl-10"
+                            required
+                          />
+                          <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="budget">Budget (₹)</Label>
+                        <Input
+                          id="budget"
+                          name="budget"
+                          value={formData.budget ?? ''}
+                          onChange={handleChange}
+                          placeholder="e.g., 2500"
+                          type="number"
+                          required
+                        />
+                      </div>
                     </div>
+                  )}
+
+                  {step === 3 && (
+                    <div className="space-y-6">
+                      <p className="text-sm text-gray-600">
+                        Your contact info is already linked to your NearFix account.
+                      </p>
+                      <div className="flex items-start space-x-2">
+                        <Info className="h-5 w-5 text-nearfix-600 mt-0.5" />
+                        <p className="text-sm text-gray-600">
+                          Your contact information will only be shared with service providers who respond to your job post.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          id="terms"
+                          className="mt-1"
+                          required
+                        />
+                        <Label htmlFor="terms" className="text-sm font-normal">
+                          I agree to NearFix's <a href="/terms" className="text-nearfix-600 hover:underline">Terms of Service</a> and <a href="/privacy" className="text-nearfix-600 hover:underline">Privacy Policy</a>
+                        </Label>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between mt-8">
+                    {step > 1 ? (
+                      <Button type="button" variant="outline" onClick={prevStep}>
+                        Back
+                      </Button>
+                    ) : <div />}
+                    {step < 3 ? (
+                      <Button
+                        type="button"
+                        onClick={nextStep}
+                        className="bg-nearfix-600 hover:bg-nearfix-700"
+                      >
+                        Next Step <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={loading}
+                        className={`bg-nearfix-600 hover:bg-nearfix-700 text-white px-6 py-2 rounded-md transition-all duration-300 ${
+                          loading ? 'opacity-70 cursor-not-allowed scale-95' : 'hover:scale-105'
+                        }`}
+                      >
+                        {loading ? 'Posting...' : 'Post Job'}
+                      </Button>
+                    )}
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="font-medium">Email address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className="pl-10"
-                      placeholder="Your email address"
-                      value={formData.email}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <CardFooter className="px-0 pt-4">
-                <Button
-                  type="submit"
-                  className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md transition-colors"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Posting...' : 'Post Job'}
-                  <Send className="ml-2 h-5 w-5" />
-                </Button>
-              </CardFooter>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                </form>
+                {message && <p className="text-sm mt-4 text-center text-red-600">{message}</p>}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+    </MainLayout>
   );
 };
 

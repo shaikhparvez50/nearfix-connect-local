@@ -1,179 +1,166 @@
 
-import { useEffect, useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Mail, Lock, LogIn } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { LogIn, Mail, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-export default function SignIn() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, signIn, isUserSignedUp, checkUserRegistration } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const SignIn = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"buyer" | "seller">("buyer");
   
-  // Get the path to redirect to after login (if provided)
-  const from = location.state?.from || '/dashboard';
-
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { signIn, user } = useAuth();
+  
   useEffect(() => {
-    const handleUserStatus = async () => {
-      if (user) {
-        // Check if the user is fully registered
-        const isRegistered = await checkUserRegistration();
-        
-        if (isRegistered) {
-          // If registered, proceed to the requested page
-          navigate(from, { replace: true });
-        } else {
-          // If not registered, redirect to complete registration
-          navigate('/signup', { state: { from, needsCompletion: true } });
-          toast.warning("Please complete your registration to continue");
-        }
-      }
-    };
-    
-    handleUserStatus();
-  }, [user, navigate, from, checkUserRegistration, isUserSignedUp]);
-
+    // Check if user is already logged in, redirect to dashboard
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+  
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please enter both email and password');
-      return;
-    }
     
     try {
-      setIsLoading(true);
-      
-      // Check if the email exists in the database
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email)
-        .limit(1);
-        
-      if (!profileData || profileData.length === 0) {
-        toast.error('Email not found. Please sign up first.');
-        setIsLoading(false);
-        setTimeout(() => navigate('/signup'), 1500);
-        return;
-      }
-      
       await signIn(email, password);
-      toast.success('Successfully logged in');
       
-      // After signing in, check registration status before navigating
-      const isRegistered = await checkUserRegistration();
-      
-      if (isRegistered) {
-        navigate(from, { replace: true });
-      } else {
-        navigate('/signup', { state: { from, needsCompletion: true } });
-        toast.warning("Please complete your registration to continue");
-      }
-    } catch (error: any) {
-      console.error("Sign-in error:", error);
-      
-      if (error.message.includes("Invalid login")) {
-        toast.error('Invalid email or password');
-      } else {
-        toast.error(error.message || 'Failed to sign in');
-      }
-    } finally {
-      setIsLoading(false);
+      // After successful sign-in, show role selection dialog
+      setShowRoleDialog(true);
+    } catch (err: any) {
+      toast({
+        title: "Login failed",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
-
+  
+  const handleRoleSelection = () => {
+    toast({
+      title: "Login successful!",
+      description: `Welcome back to NearFix as a ${selectedRole}.`,
+    });
+    
+    if (selectedRole === "seller") {
+      // Redirect to seller dashboard or specific page
+      navigate("/dashboard");
+    } else {
+      // Redirect to buyer dashboard
+      navigate("/dashboard");
+    }
+  };
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg space-y-2">
-          <div className="flex justify-center mb-2">
-            <Link to="/">
-              <img 
-                src="/placeholder.svg" 
-                alt="NearFix Logo" 
-                className="h-12 w-auto" 
-              />
-            </Link>
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
-          <CardDescription className="text-blue-100 text-center">
-            Sign in to access your account
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="pt-6">
-          <form onSubmit={handleSignIn} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email address"
-                  className="pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+      <div className="w-full max-w-md">
+        <Card className="border-0 shadow-md">
+          <CardHeader className="text-center space-y-2">
+            <div className="flex justify-center mb-2">
+              <Link to="/">
+                <img 
+                  src="/placeholder.svg" 
+                  alt="NearFix Logo" 
+                  className="h-10 w-auto" 
                 />
-              </div>
+              </Link>
             </div>
+            <CardTitle className="text-2xl font-heading">
+              Welcome Back to NearFix
+            </CardTitle>
+            <CardDescription>
+              Connect to trusted people near you
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <form onSubmit={handleSignIn} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                  Forgot password?
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    className="pl-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+              
+              <Button type="submit" className="w-full bg-nearfix-600 hover:bg-nearfix-700">
+                Sign In <LogIn className="ml-2 h-4 w-4" />
+              </Button>
+              
+              <div className="text-center text-sm">
+                <span className="text-gray-600">New here? </span>
+                <Link to="/signup" className="text-nearfix-600 hover:underline">
+                  Sign Up
                 </Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Role Selection Dialog */}
+      <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How would you like to use NearFix today?</DialogTitle>
+            <DialogDescription>
+              Choose your role to continue to the appropriate dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <RadioGroup value={selectedRole} onValueChange={(value) => setSelectedRole(value as "buyer" | "seller")}>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="buyer" id="buyer" />
+                <Label htmlFor="buyer" className="font-medium">I want to hire services (Buyer)</Label>
               </div>
-            </div>
-            
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={isLoading}
-            >
-              {isLoading ? 
-                <span className="flex items-center gap-2">
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Signing in...
-                </span> : 
-                <span className="flex items-center gap-2">
-                  Sign In <LogIn className="h-4 w-4" />
-                </span>
-              }
-            </Button>
-          </form>
-        </CardContent>
-        
-        <CardFooter className="justify-center border-t p-4">
-          <div className="text-center text-sm">
-            <span className="text-gray-600">Don't have an account? </span>
-            <Link to="/signup" className="text-blue-600 hover:underline font-medium">
-              Sign Up
-            </Link>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="seller" id="seller" />
+                <Label htmlFor="seller" className="font-medium">I want to offer services (Seller)</Label>
+              </div>
+            </RadioGroup>
           </div>
-        </CardFooter>
-      </Card>
+          
+          <Button onClick={handleRoleSelection} className="w-full bg-nearfix-600 hover:bg-nearfix-700">
+            Continue
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default SignIn;
