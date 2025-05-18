@@ -1,3 +1,4 @@
+
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +20,8 @@ import {
   LayoutDashboard, 
   Compass, 
   DatabaseBackup,
-  Smartphone
+  Smartphone,
+  Store
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -133,6 +135,19 @@ export function AppSidebar() {
                   <button onClick={() => navigate('/become-seller')}>
                     <UserPlus />
                     <span>Become a Seller</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={isActive('/create-shop')}
+                  tooltip="Post a Shop"
+                >
+                  <button onClick={() => navigate('/become-seller')}>
+                    <Store />
+                    <span>Post Your Shop</span>
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
