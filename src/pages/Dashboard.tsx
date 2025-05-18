@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ const Dashboard = () => {
   const [completedJobs, setCompletedJobs] = useState([]);
   const [nearbyProviders, setNearbyProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
   
   const { userLocation, requestLocationPermission, user } = useAuth();
   const [showLocationDialog, setShowLocationDialog] = useState(false);
@@ -143,7 +145,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <Tabs defaultValue="active" className="space-y-8">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
               <TabsList className="bg-white border">
                 <TabsTrigger value="active" className="data-[state=active]:bg-nearfix-50 data-[state=active]:text-nearfix-900">
                   <Clock className="mr-2 h-4 w-4" /> Active Jobs
