@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PostJob from "./pages/PostJob";
@@ -30,30 +32,37 @@ const App = () => {
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/contact" element={<ContactUs />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              
-              {/* Protected routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/post-job" element={<PostJob />} />
-                <Route path="/become-seller" element={<BecomeSeller />} />
-                <Route path="/job-confirmation" element={<JobConfirmation />} />
-                <Route path="/seller-confirmation" element={<SellerConfirmation />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <SidebarProvider>
+              <div className="flex min-h-screen w-full">
+                <AppSidebar />
+                <div className="flex-1">
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/search" element={<SearchResults />} />
+                    <Route path="/signin" element={<SignIn />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route path="/about" element={<AboutUs />} />
+                    <Route path="/contact" element={<ContactUs />} />
+                    <Route path="/services" element={<Services />} />
+                    <Route path="/how-it-works" element={<HowItWorks />} />
+                    
+                    {/* Protected routes */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/post-job" element={<PostJob />} />
+                      <Route path="/become-seller" element={<BecomeSeller />} />
+                      <Route path="/job-confirmation" element={<JobConfirmation />} />
+                      <Route path="/seller-confirmation" element={<SellerConfirmation />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                    </Route>
+                    
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </div>
+            </SidebarProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

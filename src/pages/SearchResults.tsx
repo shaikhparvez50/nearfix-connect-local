@@ -1,552 +1,342 @@
 
-import { useState, useEffect } from "react";
-import MainLayout from "@/components/layout/MainLayout";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { 
-  Search, MapPin, Star, Phone, Calendar, Filter, 
-  Check, ChevronDown, ChevronUp, UserCheck, Navigation,
-  Briefcase, Clock
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useSearchParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import MainLayout from '@/components/layout/MainLayout';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Compass, MapPin, Search, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useLocation } from '@/hooks/useLocation';
 
 interface Provider {
-  provider_id: string;
+  id: string;
   business_name: string;
-  rating?: number;
-  reviews?: number;
   service_types: string[];
-  distance: number;
-  address: string;
-  verified?: boolean;
-  available?: string;
+  description: string;
+  distance?: number;
+  hourly_rate: number;
 }
 
-interface JobPosting {
+interface Job {
   id: string;
   title: string;
   description: string;
-  category: string;
   location: string;
+  category: string;
   budget: number;
   created_at: string;
-  status: string;
 }
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
-  const serviceParam = searchParams.get('service') || '';
-  const locationParam = searchParams.get('location') || '';
-  
-  const [service, setService] = useState(serviceParam);
-  const [location, setLocation] = useState(locationParam);
-  const [maxDistance, setMaxDistance] = useState([10]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [activeTab, setActiveTab] = useState("providers");
-  
-  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
-  const [selectedProviderType, setSelectedProviderType] = useState('');
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [onlyVerified, setOnlyVerified] = useState(false);
-  
-  const { userLocation, requestLocationPermission } = useAuth();
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('service') || '');
+  const [searchLocation, setSearchLocation] = useState(searchParams.get('location') || '');
+  const [activeTab, setActiveTab] = useState('providers');
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showLocationAlert, setShowLocationAlert] = useState(false);
-  
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const locationHook = useLocation();
+
   useEffect(() => {
-    if (!userLocation && !locationParam) {
-      setShowLocationAlert(true);
-    } else {
-      setShowLocationAlert(false);
-    }
-    
-    const fetchProviders = async () => {
-      if (!userLocation) return;
-      
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('find_nearest_providers', {
-          user_lat: userLocation.latitude,
-          user_lon: userLocation.longitude,
-          limit_count: 10
+        // Fetch providers
+        let providerQuery = supabase.from('service_providers').select('*');
+        
+        if (searchTerm) {
+          providerQuery = providerQuery.contains('service_types', [searchTerm]);
+        }
+
+        const { data: providersData, error: providersError } = await providerQuery;
+        
+        if (providersError) throw new Error(providersError.message);
+        setProviders(providersData || []);
+        
+        // Fetch jobs
+        let jobsQuery = supabase.from('job_postings').select('*');
+        
+        if (searchTerm) {
+          jobsQuery = jobsQuery.eq('category', searchTerm);
+        }
+        
+        if (searchLocation) {
+          jobsQuery = jobsQuery.ilike('location', `%${searchLocation}%`);
+        }
+        
+        const { data: jobsData, error: jobsError } = await jobsQuery;
+        
+        if (jobsError) throw new Error(jobsError.message);
+        setJobs(jobsData || []);
+        
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch search results. Please try again.",
+          variant: "destructive",
         });
-
-        if (error) throw error;
-        
-        setProviders(data || []);
-        setIsLoading(false);
-      } catch (error: any) {
-        console.error('Error fetching providers:', error);
-        toast.error('Failed to load service providers');
-        setIsLoading(false);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const fetchJobs = async () => {
-      try {
-        let query = supabase
-          .from('job_postings')
-          .select('*')
-          .eq('status', 'active');
-        
-        if (service) {
-          query = query.ilike('category', `%${service}%`);
-        }
-        
-        if (location) {
-          query = query.ilike('location', `%${location}%`);
-        }
-        
-        const { data, error } = await query.order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        setJobPostings(data || []);
-        setIsLoading(false);
-      } catch (error: any) {
-        console.error('Error fetching job postings:', error);
-        toast.error('Failed to load job postings');
-        setIsLoading(false);
-      }
-    };
-
-    fetchJobs();
-    
-    if (userLocation) {
-      fetchProviders();
-    }
-  }, [userLocation, locationParam, service, location]);
-  
-  const handleLocationRequest = async () => {
-    const success = await requestLocationPermission();
-    if (success) {
-      setShowLocationAlert(false);
-      toast.success("Showing service providers near your location");
-    }
-  };
-  
-  const toggleServiceType = (type: string) => {
-    if (selectedServiceTypes.includes(type)) {
-      setSelectedServiceTypes(selectedServiceTypes.filter(t => t !== type));
-    } else {
-      setSelectedServiceTypes([...selectedServiceTypes, type]);
-    }
-  };
+    fetchData();
+  }, [searchTerm, searchLocation, toast]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Update search parameters and refetch data
+    navigate(`/search?service=${searchTerm}&location=${searchLocation}`);
+    
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch providers
+        let providerQuery = supabase.from('service_providers').select('*');
+        
+        if (searchTerm) {
+          providerQuery = providerQuery.contains('service_types', [searchTerm]);
+        }
+
+        const { data: providersData, error: providersError } = await providerQuery;
+        
+        if (providersError) throw new Error(providersError.message);
+        setProviders(providersData || []);
+        
+        // Fetch jobs
+        let jobsQuery = supabase.from('job_postings').select('*');
+        
+        if (searchTerm) {
+          jobsQuery = jobsQuery.eq('category', searchTerm);
+        }
+        
+        if (searchLocation) {
+          jobsQuery = jobsQuery.ilike('location', `%${searchLocation}%`);
+        }
+        
+        const { data: jobsData, error: jobsError } = await jobsQuery;
+        
+        if (jobsError) throw new Error(jobsError.message);
+        setJobs(jobsData || []);
+        
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch search results. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  };
+
+  const handleDetectLocation = () => {
+    locationHook.detectLocation();
+  };
+
+  // Update location input when we get location from the hook
+  useEffect(() => {
+    if (locationHook.address) {
+      setSearchLocation(locationHook.address);
+    }
+  }, [locationHook.address]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   return (
     <MainLayout>
-      <section className="bg-gray-50 min-h-screen py-8">
-        <div className="container mx-auto px-4">
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-            <form onSubmit={handleSearch}>
-              <div className="flex flex-col md:flex-row gap-3">
+      <div className="bg-gray-50 min-h-screen py-8 px-4 md:px-0">
+        <div className="container mx-auto">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-2xl md:text-3xl font-bold text-nearfix-900 mb-6">
+              Search Results
+            </h1>
+
+            {/* Search form */}
+            <form onSubmit={handleSearch} className="bg-white p-4 rounded-xl shadow-md mb-6">
+              <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       type="text"
                       placeholder="Service type"
-                      className="pl-10"
-                      value={service}
-                      onChange={(e) => setService(e.target.value)}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 h-10"
                     />
                   </div>
                 </div>
                 <div className="flex-1">
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  <div className="relative flex items-center">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       type="text"
                       placeholder="Location"
-                      className="pl-10"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
+                      value={searchLocation}
+                      onChange={(e) => setSearchLocation(e.target.value)}
+                      className="pl-9 h-10 pr-10"
                     />
+                    <Button 
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-8"
+                      onClick={handleDetectLocation}
+                      disabled={locationHook.loading}
+                    >
+                      <Compass className="h-4 w-4 text-nearfix-500" />
+                      <span className="sr-only">Detect location</span>
+                    </Button>
                   </div>
+                  {locationHook.error && (
+                    <p className="text-xs text-red-500 mt-1">{locationHook.error}</p>
+                  )}
                 </div>
                 <Button type="submit" className="bg-nearfix-600 hover:bg-nearfix-700">
                   Search
                 </Button>
               </div>
+              {/* Filter options can be added here */}
             </form>
-          </div>
 
-          {showLocationAlert && (
-            <Alert className="mb-6 bg-blue-50 border-blue-200">
-              <MapPin className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>Share your location to find service providers near you.</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100"
-                  onClick={handleLocationRequest}
-                >
-                  <Navigation className="mr-2 h-3 w-3" />
-                  Detect My Location
+            {/* Results Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex items-center justify-between mb-4">
+                <TabsList>
+                  <TabsTrigger value="providers">Service Providers</TabsTrigger>
+                  <TabsTrigger value="jobs">Jobs</TabsTrigger>
+                </TabsList>
+                <Button variant="outline" size="sm" className="text-xs gap-1">
+                  <Filter className="h-3 w-3" />
+                  Filters
                 </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {userLocation && (
-            <div className="mb-6 flex items-center text-sm">
-              <MapPin className="h-4 w-4 mr-1 text-nearfix-600" />
-              <span className="font-medium">Your location:</span>
-              <span className="ml-2 text-gray-600">
-                {userLocation.address || 
-                  `${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`}
-              </span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="ml-2 h-7 text-xs text-nearfix-600"
-                onClick={requestLocationPermission}
-              >
-                <Navigation className="h-3 w-3 mr-1" /> Update
-              </Button>
-            </div>
-          )}
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid w-full md:w-96 grid-cols-2 mb-4">
-              <TabsTrigger value="providers" className="flex items-center">
-                <UserCheck className="h-4 w-4 mr-2" /> Service Providers
-              </TabsTrigger>
-              <TabsTrigger value="jobs" className="flex items-center">
-                <Briefcase className="h-4 w-4 mr-2" /> Job Postings
-              </TabsTrigger>
-            </TabsList>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-1">
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="font-heading font-medium text-lg">Filters</h2>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="lg:hidden"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  
-                  <div className={`p-4 space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-                    <div>
-                      <h3 className="font-medium text-sm mb-3">Maximum Distance</h3>
-                      <div className="px-2">
-                        <Slider
-                          defaultValue={[10]}
-                          max={25}
-                          step={1}
-                          value={maxDistance}
-                          onValueChange={setMaxDistance}
-                        />
-                        <div className="mt-2 text-sm text-gray-600">
-                          Up to {maxDistance[0]} km
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium text-sm mb-3">Service Type</h3>
-                      <div className="space-y-2">
-                        {['Fabrication', 'Electrical', 'Plumbing', 'Tuition', 'Home Repair'].map((type) => (
-                          <label key={type} className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedServiceTypes.includes(type)}
-                              onChange={() => toggleServiceType(type)}
-                              className="rounded text-nearfix-600"
-                            />
-                            <span className="text-sm">{type}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {activeTab === "providers" && (
-                      <>
-                        <div>
-                          <h3 className="font-medium text-sm mb-3">Provider Type</h3>
-                          <div className="space-y-2">
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="provider-type"
-                                value="individual"
-                                checked={selectedProviderType === 'individual'}
-                                onChange={() => setSelectedProviderType('individual')}
-                                className="text-nearfix-600"
-                              />
-                              <span className="text-sm">Individual</span>
-                            </label>
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="provider-type"
-                                value="company"
-                                checked={selectedProviderType === 'company'}
-                                onChange={() => setSelectedProviderType('company')}
-                                className="text-nearfix-600"
-                              />
-                              <span className="text-sm">Company/Business</span>
-                            </label>
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="provider-type"
-                                value=""
-                                checked={selectedProviderType === ''}
-                                onChange={() => setSelectedProviderType('')}
-                                className="text-nearfix-600"
-                              />
-                              <span className="text-sm">Both</span>
-                            </label>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h3 className="font-medium text-sm mb-3">Minimum Rating</h3>
-                          <div className="flex items-center space-x-1">
-                            {[1, 2, 3, 4, 5].map((rating) => (
-                              <button
-                                key={rating}
-                                type="button"
-                                onClick={() => setSelectedRating(rating)}
-                                className={`p-1 rounded-md ${selectedRating >= rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                              >
-                                <Star className={`h-5 w-5 ${selectedRating >= rating ? 'fill-yellow-400' : ''}`} />
-                              </button>
-                            ))}
-                            {selectedRating > 0 && (
-                              <button 
-                                onClick={() => setSelectedRating(0)}
-                                className="text-xs text-gray-500 ml-2 hover:text-nearfix-600"
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={onlyVerified}
-                              onChange={(e) => setOnlyVerified(e.target.checked)}
-                              className="rounded text-nearfix-600"
-                            />
-                            <span className="text-sm">Only Verified Providers</span>
-                          </label>
-                        </div>
-                      </>
-                    )}
-                    
-                    <Button 
-                      className="w-full lg:hidden bg-nearfix-600 hover:bg-nearfix-700"
-                      onClick={() => setShowFilters(false)}
-                    >
-                      Apply Filters <Filter className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
               </div>
-              
-              <div className="lg:col-span-3">
-                <TabsContent value="providers" className="mt-0">
-                  <div className="mb-4 flex justify-between items-center">
-                    <div>
-                      <h2 className="font-heading font-medium text-lg">
-                        {providers.length} Service Providers Found
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        Showing results for {service || 'All Services'} in {userLocation?.address || location || 'Your Area'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {isLoading ? (
-                      <div className="text-center py-8">Loading providers...</div>
-                    ) : providers.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">No service providers found in this area.</p>
-                        <p className="text-gray-500">Try changing your search criteria or location.</p>
-                      </div>
-                    ) : (
-                      providers.map((provider) => (
-                        <Card key={provider.provider_id} className="overflow-hidden hover:shadow-md transition-shadow">
-                          <CardContent className="p-0">
-                            <div className="flex flex-col md:flex-row">
-                              <div className="p-4 md:p-6 flex-grow">
-                                <div className="flex items-center gap-4">
-                                  <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
-                                    <AvatarImage src="/placeholder.svg" alt={provider.business_name} />
-                                    <AvatarFallback className="bg-nearfix-100 text-nearfix-700">
-                                      {provider.business_name.split(' ').map(n => n[0]).join('')}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <h3 className="font-medium text-lg">{provider.business_name}</h3>
-                                      {provider.verified && (
-                                        <Badge variant="secondary" className="bg-green-50 text-green-700 flex items-center gap-1">
-                                          <UserCheck className="h-3 w-3" />
-                                          <span className="text-xs">Verified</span>
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    {provider.rating && (
-                                      <div className="flex items-center mt-1">
-                                        <div className="flex items-center text-yellow-400 mr-2">
-                                          <Star className="h-4 w-4 fill-yellow-400" />
-                                          <span className="text-sm font-medium text-gray-700 ml-1">
-                                            {provider.rating}
-                                          </span>
-                                        </div>
-                                        {provider.reviews && (
-                                          <span className="text-xs text-gray-500">
-                                            ({provider.reviews} reviews)
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                <div className="mt-4">
-                                  <div className="flex flex-wrap gap-2 mb-3">
-                                    {provider.service_types.map((service) => (
-                                      <Badge key={service} variant="outline" className="bg-nearfix-50 text-nearfix-700 border-none">
-                                        {service}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                  
-                                  <div className="flex items-center text-sm text-gray-600 mb-2">
-                                    <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                                    <span>{provider.address}</span>
-                                    <span className="mx-2">•</span>
-                                    <span>{provider.distance.toFixed(1)} km</span>
-                                  </div>
-                                  
-                                  {provider.available && (
-                                    <div className="flex items-center text-sm text-gray-600">
-                                      <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                                      <span>Available: {provider.available}</span>
-                                    </div>
-                                  )}
+
+              <TabsContent value="providers">
+                <div className="space-y-4">
+                  {loading ? (
+                    <div className="text-center py-8">Loading providers...</div>
+                  ) : providers.length > 0 ? (
+                    providers.map((provider) => (
+                      <Card key={provider.id} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold text-lg">{provider.business_name}</h3>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {provider.service_types.map((service, idx) => (
+                                    <span 
+                                      key={idx}
+                                      className="bg-nearfix-100 text-nearfix-600 px-2 py-0.5 rounded text-xs"
+                                    >
+                                      {service}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
-                              
-                              <div className="p-4 md:p-6 md:border-l flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 bg-gray-50">
-                                <Button asChild variant="outline">
-                                  <a href={`/provider/${provider.provider_id}`}>
-                                    View Profile
-                                  </a>
-                                </Button>
-                                <Button className="bg-nearfix-500 hover:bg-nearfix-600">
-                                  <Phone className="h-4 w-4 mr-2" />
-                                  Contact
-                                </Button>
+                              <div className="text-right">
+                                <span className="font-medium">₹{provider.hourly_rate}/hr</span>
+                                {provider.distance && (
+                                  <p className="text-sm text-gray-500">{provider.distance.toFixed(1)} km away</p>
+                                )}
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="jobs" className="mt-0">
-                  <div className="mb-4 flex justify-between items-center">
-                    <div>
-                      <h2 className="font-heading font-medium text-lg">
-                        {jobPostings.length} Job Postings Found
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        Showing results for {service || 'All Services'} in {location || 'All Locations'}
-                      </p>
+                            <p className="text-gray-600 mt-2 line-clamp-2">
+                              {provider.description}
+                            </p>
+                            <div className="mt-4 flex justify-end">
+                              <Button variant="outline" size="sm" className="text-nearfix-600">
+                                View Profile
+                              </Button>
+                              <Button size="sm" className="ml-2 bg-nearfix-600">
+                                Contact
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No service providers found matching your criteria</p>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {isLoading ? (
-                      <div className="text-center py-8">Loading job postings...</div>
-                    ) : jobPostings.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">No job postings found for your search criteria.</p>
-                        <p className="text-gray-500">Try changing your search parameters or post a job.</p>
-                      </div>
-                    ) : (
-                      jobPostings.map((job) => (
-                        <Card key={job.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                          <CardContent className="p-0">
-                            <div className="p-6">
-                              <div className="flex justify-between items-start mb-4">
-                                <h3 className="font-medium text-lg">{job.title}</h3>
-                                <Badge variant="secondary" className="bg-nearfix-50 text-nearfix-700">
-                                  {job.category}
-                                </Badge>
-                              </div>
-                              
-                              <p className="text-gray-600 mb-4 line-clamp-2">{job.description}</p>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-                                <div className="flex items-center">
-                                  <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="jobs">
+                <div className="space-y-4">
+                  {loading ? (
+                    <div className="text-center py-8">Loading jobs...</div>
+                  ) : jobs.length > 0 ? (
+                    jobs.map((job) => (
+                      <Card key={job.id} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold text-lg">{job.title}</h3>
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                  <MapPin className="h-3 w-3 mr-1" />
                                   <span>{job.location}</span>
                                 </div>
-                                
-                                {job.budget && (
-                                  <div className="flex items-center">
-                                    <div className="h-4 w-4 mr-2 text-gray-400 flex items-center justify-center">₹</div>
-                                    <span>Budget: {job.budget}</span>
-                                  </div>
-                                )}
-                                
-                                <div className="flex items-center">
-                                  <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                                  <span>Posted: {new Date(job.created_at).toLocaleDateString()}</span>
-                                </div>
                               </div>
-                              
-                              <div className="mt-4 pt-4 border-t flex justify-end">
-                                <Button className="bg-nearfix-600 hover:bg-nearfix-700">
-                                  Apply Now
-                                </Button>
+                              <div className="text-right">
+                                <span className="font-medium">₹{job.budget || 'Negotiable'}</span>
+                                <p className="text-xs text-gray-500">
+                                  Posted on {formatDate(job.created_at)}
+                                </p>
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
-                </TabsContent>
-              </div>
-            </div>
-          </Tabs>
+                            <div className="mt-2">
+                              <span className="bg-nearfix-100 text-nearfix-600 px-2 py-0.5 rounded text-xs">
+                                {job.category}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mt-2 line-clamp-2">
+                              {job.description}
+                            </p>
+                            <div className="mt-4 flex justify-end">
+                              <Button variant="outline" size="sm" className="text-nearfix-600">
+                                View Details
+                              </Button>
+                              <Button size="sm" className="ml-2 bg-nearfix-600">
+                                Apply
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No jobs found matching your criteria</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-      </section>
+      </div>
     </MainLayout>
   );
 };
