@@ -1,4 +1,3 @@
-
 import {
   Sidebar,
   SidebarContent,
@@ -24,13 +23,12 @@ import {
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useContext } from "react";
-import { AuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   
   // Check if a path is active
   const isActive = (path: string) => {
