@@ -1,8 +1,9 @@
+
 // pages/PostJob.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
-import { TablesInsert } from '../types/types';
+import { JobPostingType } from '../types/types';
 import MainLayout from '@/components/layout/MainLayout';
 import {
   Card,
@@ -26,13 +27,13 @@ import { Upload, MapPin, Calendar, ArrowRight, Info } from 'lucide-react';
 
 const PostJob = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<TablesInsert<'job_postings'>>({
+  const [formData, setFormData] = useState<Partial<JobPostingType>>({
     title: '',
     description: '',
     category: '',
     location: '',
     user_id: '',
-    budget: null,
+    budget: 0,
     status: 'open',
   });
   const [step, setStep] = useState(1);
