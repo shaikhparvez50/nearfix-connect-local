@@ -41,7 +41,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar defaultCollapsed={isMobile}>
+    <Sidebar>
       <SidebarHeader className="border-b pb-2">
         <div className="flex items-center justify-between px-4 pt-2">
           <div className="flex items-center">
