@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -36,8 +37,6 @@ const SearchResults = () => {
           : null;
 
         // Fetch providers
-        let providersQuery;
-        
         if (userCoordinates) {
           // Use the find_nearest_providers function if we have user coordinates
           const { data: nearestProviders, error: nearestError } = await supabase
@@ -59,14 +58,20 @@ const SearchResults = () => {
             );
           }
           
+          // Get seller_profiles for each provider to get profile images
+          const providerIds = filteredProviders.map((provider: any) => provider.user_id);
+          const { data: sellerProfiles, error: profilesError } = await supabase
+            .from('seller_profiles')
+            .select('user_id, profile_image, business_name')
+            .in('user_id', providerIds);
+          
+          if (profilesError) throw new Error(profilesError.message);
+          
           // Map to match ProviderType with additional image field
-          const transformedProviders = await Promise.all(filteredProviders.map(async (provider: any) => {
-            // Get seller profile for images
-            const { data: sellerProfile } = await supabase
-              .from('seller_profiles')
-              .select('profile_image, business_name')
-              .eq('user_id', provider.user_id)
-              .maybeSingle();
+          const transformedProviders = filteredProviders.map((provider: any) => {
+            const sellerProfile = sellerProfiles?.find(
+              (profile) => profile.user_id === provider.user_id
+            );
             
             return {
               provider_id: provider.provider_id,
@@ -79,43 +84,40 @@ const SearchResults = () => {
               address: provider.address || '',
               profile_image: sellerProfile?.profile_image || null
             };
-          }));
+          });
           
           setProviders(transformedProviders);
         } else {
-          // Regular query without distance calculation
-          let providerQuery = supabase.from('service_providers').select('*');
+          // Regular query without distance calculation - fetch from seller_profiles
+          const { data: sellerProfiles, error: sellerError } = await supabase
+            .from('seller_profiles')
+            .select('*');
           
+          if (sellerError) throw new Error(sellerError.message);
+          
+          // Transform data to match ProviderType
+          let filteredProfiles = sellerProfiles || [];
+          
+          // Filter by service if search term provided
           if (searchTerm && searchTerm.trim() !== '') {
-            // Search for providers with matching service types
-            providerQuery = providerQuery.contains('service_types', [searchTerm]);
+            filteredProfiles = filteredProfiles.filter((profile) =>
+              profile.services?.some((service: string) => 
+                service.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+            );
           }
-    
-          const { data: providersData, error: providersError } = await providerQuery;
           
-          if (providersError) throw new Error(providersError.message);
-          
-          // Transform and fetch images for each provider
-          const transformedProviders = await Promise.all(providersData?.map(async (provider) => {
-            // Get seller profile for images
-            const { data: sellerProfile } = await supabase
-              .from('seller_profiles')
-              .select('profile_image, business_name')
-              .eq('user_id', provider.user_id)
-              .maybeSingle();
-              
-            return {
-              provider_id: provider.id,
-              user_id: provider.user_id,
-              business_name: sellerProfile?.business_name || provider.business_name || 'Unnamed Business',
-              service_types: provider.service_types || [],
-              description: provider.description || '',
-              hourly_rate: provider.hourly_rate || 0,
-              distance: 0,
-              address: '',
-              profile_image: sellerProfile?.profile_image || null
-            };
-          }) || []);
+          const transformedProviders = filteredProfiles.map((profile) => ({
+            provider_id: profile.id,
+            user_id: profile.user_id,
+            business_name: profile.business_name || 'Unnamed Business',
+            service_types: profile.services || [],
+            description: profile.description || '',
+            hourly_rate: profile.hourly_rate || 0,
+            distance: 0,
+            address: '',
+            profile_image: profile.profile_image || null
+          }));
           
           setProviders(transformedProviders);
         }
@@ -145,7 +147,8 @@ const SearchResults = () => {
           budget: job.budget || 0,
           created_at: job.created_at,
           status: job.status,
-          user_id: job.user_id
+          user_id: job.user_id,
+          images: job.images || []
         })) || [];
         
         setJobs(transformedJobs);

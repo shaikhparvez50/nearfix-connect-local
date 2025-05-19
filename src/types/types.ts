@@ -62,4 +62,3 @@ export const SERVICE_CATEGORIES = [
   'Air Conditioning',
   'Other'
 ];
-
