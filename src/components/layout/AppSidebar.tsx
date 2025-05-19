@@ -22,7 +22,7 @@ import {
   DatabaseBackup,
   Smartphone,
   Store,
-  HandShake
+  Handshake
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "react-router-dom";

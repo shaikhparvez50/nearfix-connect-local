@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,6 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
       city: "",
       pincode: "",
       serviceRadius: "",
-      termsAgreed: false
     }
   });
 
