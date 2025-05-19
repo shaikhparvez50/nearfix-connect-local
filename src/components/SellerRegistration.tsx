@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [workSamples, setWorkSamples] = useState<File[]>([]);
   const [idProof, setIdProof] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<z.infer<typeof sellerFormSchema>>({
     resolver: zodResolver(sellerFormSchema),
@@ -108,13 +110,77 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
     }
   };
 
+  const uploadFile = async (file: File, bucket: string, folder: string) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${folder}/${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file);
+      
+      if (error) throw error;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+      
+      return publicUrlData.publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  };
+
+  const handleNextStep = async (step: number, data?: z.infer<typeof sellerFormSchema>) => {
+    if (step === 1) {
+      // First step validation
+      const result = await form.trigger(['sellerType', 'businessName', 'phoneNumber', 'email']);
+      if (!result) return;
+      
+      setStep(2);
+    } else if (step === 2) {
+      // Second step validation
+      const result = await form.trigger(['serviceCategory', 'experience', 'description']);
+      if (!result) return;
+      
+      setStep(3);
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof sellerFormSchema>) => {
     if (!user) {
       toast.error("You must be logged in to register as a seller");
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
+      // Upload images if provided
+      let profilePhotoUrl = null;
+      let workSampleUrls: string[] = [];
+      let idProofUrl = null;
+
+      // Upload profile photo
+      if (profilePhoto) {
+        profilePhotoUrl = await uploadFile(profilePhoto, 'seller-profiles', `${user.id}/profile`);
+      }
+
+      // Upload work samples
+      if (workSamples.length > 0) {
+        const uploadPromises = workSamples.map(file => 
+          uploadFile(file, 'seller-profiles', `${user.id}/work-samples`)
+        );
+        workSampleUrls = await Promise.all(uploadPromises);
+      }
+
+      // Upload ID proof
+      if (idProof) {
+        idProofUrl = await uploadFile(idProof, 'seller-profiles', `${user.id}/id-proof`);
+      }
+
       // 1. Update user role
       const { error: userError } = await supabase
         .from('users')
@@ -131,6 +197,9 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
           business_name: values.businessName,
           services: [values.serviceCategory],
           description: values.description,
+          profile_image: profilePhotoUrl,
+          work_samples: workSampleUrls,
+          id_proof: idProofUrl
         });
 
       if (sellerError) throw sellerError;
@@ -152,13 +221,12 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
         }
       }
 
-      // 4. Handle file uploads if we had implemented storage
-      // This would be implemented if file storage was set up
-
       toast.success("Your application has been submitted successfully!");
       navigate('/seller-confirmation');
     } catch (error: any) {
       toast.error(error.message || "Failed to submit seller application");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -167,7 +235,12 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
       {step === 1 && (
         <div className="space-y-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(() => setStep(2))} className="space-y-6">
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                handleNextStep(1);
+              }} 
+              className="space-y-6"
+            >
               <FormField
                 control={form.control}
                 name="sellerType"
@@ -239,9 +312,22 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
                   className="border border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => document.getElementById('profile-photo')?.click()}
                 >
-                  <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">Upload a clear profile photo or business logo</p>
-                  <p className="text-xs text-gray-500 mt-1">JPG or PNG format, max 5MB</p>
+                  {profilePhoto ? (
+                    <div className="flex flex-col items-center">
+                      <img 
+                        src={URL.createObjectURL(profilePhoto)} 
+                        alt="Profile Preview" 
+                        className="h-32 w-32 object-cover rounded-full mb-2"
+                      />
+                      <p className="text-sm text-gray-600">Click to change</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">Upload a clear profile photo or business logo</p>
+                      <p className="text-xs text-gray-500 mt-1">JPG or PNG format, max 5MB</p>
+                    </>
+                  )}
                   <Input 
                     id="profile-photo"
                     type="file" 
@@ -263,7 +349,12 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
       {step === 2 && (
         <div className="space-y-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(() => setStep(3))} className="space-y-6">
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                handleNextStep(2);
+              }} 
+              className="space-y-6"
+            >
               <FormField
                 control={form.control}
                 name="serviceCategory"
@@ -356,7 +447,24 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
                   />
                 </div>
                 {workSamples.length > 0 && (
-                  <p className="text-xs text-gray-500">{workSamples.length} file(s) selected</p>
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500 mb-2">{workSamples.length} file(s) selected</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {workSamples.slice(0, 3).map((file, index) => (
+                        <img 
+                          key={index}
+                          src={URL.createObjectURL(file)}
+                          alt={`Work sample ${index + 1}`}
+                          className="h-20 w-20 object-cover rounded"
+                        />
+                      ))}
+                      {workSamples.length > 3 && (
+                        <div className="h-20 w-20 bg-gray-100 rounded flex items-center justify-center text-sm text-gray-500">
+                          +{workSamples.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -470,13 +578,25 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
                   className="border border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => document.getElementById('id-proof')?.click()}
                 >
-                  <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">
-                    Upload a government-issued ID for verification
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Aadhaar Card, PAN Card, or Business Registration
-                  </p>
+                  {idProof ? (
+                    <div className="flex flex-col items-center">
+                      <div className="bg-gray-100 p-2 rounded mb-2">
+                        <p className="text-sm font-medium">{idProof.name}</p>
+                        <p className="text-xs text-gray-500">{(idProof.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                      <p className="text-sm text-gray-600">Click to change</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">
+                        Upload a government-issued ID for verification
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Aadhaar Card, PAN Card, or Business Registration
+                      </p>
+                    </>
+                  )}
                   <Input 
                     id="id-proof"
                     type="file" 
@@ -485,7 +605,6 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
                     onChange={handleIdProofChange}
                   />
                 </div>
-                {idProof && <p className="text-xs text-gray-500">File selected: {idProof.name}</p>}
               </div>
 
               <div className="border-t border-gray-200 mt-6 pt-6">
@@ -517,7 +636,9 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
                 <Button type="button" variant="outline" onClick={() => setStep(2)}>
                   Back
                 </Button>
-                <Button type="submit">Submit Application</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                </Button>
               </div>
             </form>
           </Form>

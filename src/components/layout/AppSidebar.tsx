@@ -143,7 +143,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild 
-                  isActive={isActive('/create-shop')}
+                  isActive={isActive('/offer-service')}
                   tooltip="Offer Your Service"
                 >
                   <button onClick={() => navigate('/become-seller')}>
