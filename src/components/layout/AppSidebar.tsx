@@ -1,4 +1,3 @@
-
 import {
   Sidebar,
   SidebarContent,
@@ -131,11 +130,11 @@ export function AppSidebar() {
                 <SidebarMenuButton 
                   asChild 
                   isActive={isActive('/become-seller')}
-                  tooltip="Become a Seller"
+                  tooltip="Become a Service Provider"
                 >
                   <button onClick={() => navigate('/become-seller')}>
                     <UserPlus />
-                    <span>Become a Seller</span>
+                    <span>Become a Provider</span>
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>

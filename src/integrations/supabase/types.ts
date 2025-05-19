@@ -154,10 +154,13 @@ export type Database = {
           description: string | null
           hourly_rate: number | null
           id: string
+          id_proof: string | null
           is_verified: boolean
+          profile_image: string | null
           services: string[]
           updated_at: string
           user_id: string
+          work_samples: string[] | null
         }
         Insert: {
           business_name: string
@@ -165,10 +168,13 @@ export type Database = {
           description?: string | null
           hourly_rate?: number | null
           id?: string
+          id_proof?: string | null
           is_verified?: boolean
+          profile_image?: string | null
           services: string[]
           updated_at?: string
           user_id: string
+          work_samples?: string[] | null
         }
         Update: {
           business_name?: string
@@ -176,10 +182,13 @@ export type Database = {
           description?: string | null
           hourly_rate?: number | null
           id?: string
+          id_proof?: string | null
           is_verified?: boolean
+          profile_image?: string | null
           services?: string[]
           updated_at?: string
           user_id?: string
+          work_samples?: string[] | null
         }
         Relationships: []
       }

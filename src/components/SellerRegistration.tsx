@@ -110,6 +110,10 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
     }
   };
 
+  const removeWorkSample = (index: number) => {
+    setWorkSamples(prev => prev.filter((_, i) => i !== index));
+  };
+
   const uploadFile = async (file: File, bucket: string, folder: string) => {
     try {
       const fileExt = file.name.split('.').pop();
@@ -133,14 +137,14 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
     }
   };
 
-  const handleNextStep = async (step: number, data?: z.infer<typeof sellerFormSchema>) => {
-    if (step === 1) {
+  const handleNextStep = async (currentStep: number) => {
+    if (currentStep === 1) {
       // First step validation
       const result = await form.trigger(['sellerType', 'businessName', 'phoneNumber', 'email']);
       if (!result) return;
       
       setStep(2);
-    } else if (step === 2) {
+    } else if (currentStep === 2) {
       // Second step validation
       const result = await form.trigger(['serviceCategory', 'experience', 'description']);
       if (!result) return;
@@ -447,22 +451,28 @@ export const SellerRegistration = ({ step, setStep }: { step: number, setStep: (
                   />
                 </div>
                 {workSamples.length > 0 && (
-                  <div className="mt-2">
+                  <div className="mt-4">
                     <p className="text-xs text-gray-500 mb-2">{workSamples.length} file(s) selected</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {workSamples.slice(0, 3).map((file, index) => (
-                        <img 
-                          key={index}
-                          src={URL.createObjectURL(file)}
-                          alt={`Work sample ${index + 1}`}
-                          className="h-20 w-20 object-cover rounded"
-                        />
-                      ))}
-                      {workSamples.length > 3 && (
-                        <div className="h-20 w-20 bg-gray-100 rounded flex items-center justify-center text-sm text-gray-500">
-                          +{workSamples.length - 3} more
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                      {workSamples.map((file, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={URL.createObjectURL(file)}
+                            alt={`Work sample ${index + 1}`}
+                            className="h-20 w-20 object-cover rounded"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeWorkSample(index);
+                            }}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
                         </div>
-                      )}
+                      ))}
                     </div>
                   </div>
                 )}
