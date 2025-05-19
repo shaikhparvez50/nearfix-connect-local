@@ -11,6 +11,12 @@ export interface JobPostingType {
   created_at: string;
   status: string;
   user_id?: string;
+  skills_required?: string[];
+  images?: string[];
+  contact_email?: string;
+  contact_phone?: string;
+  duration?: string;
+  preferred_time?: string;
 }
 
 export interface ProviderType {
@@ -28,6 +34,8 @@ export interface ProviderType {
   hourly_rate?: number;
   latitude?: number;
   longitude?: number;
+  profile_image?: string;
+  work_samples?: string[];
 }
 
 export interface UserLocationType {
@@ -35,3 +43,23 @@ export interface UserLocationType {
   longitude: number;
   address?: string;
 }
+
+// Common service categories
+export const SERVICE_CATEGORIES = [
+  'Plumbing',
+  'Electrical',
+  'Carpentry',
+  'Painting',
+  'Fabrication',
+  'Cleaning',
+  'Gardening',
+  'Home Repair',
+  'Moving',
+  'Appliance Repair',
+  'Flooring',
+  'Roofing',
+  'Security',
+  'Air Conditioning',
+  'Other'
+];
+

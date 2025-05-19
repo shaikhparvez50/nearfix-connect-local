@@ -1,3 +1,4 @@
+
 import {
   Sidebar,
   SidebarContent,
@@ -26,11 +27,13 @@ import {
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   // Check if a path is active
   const isActive = (path: string) => {
@@ -38,7 +41,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar defaultCollapsed={isMobile}>
       <SidebarHeader className="border-b pb-2">
         <div className="flex items-center justify-between px-4 pt-2">
           <div className="flex items-center">
