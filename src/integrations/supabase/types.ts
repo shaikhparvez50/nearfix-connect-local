@@ -43,8 +43,11 @@ export type Database = {
         Row: {
           budget: number | null
           category: string
+          contact_email: string | null
+          contact_phone: number | null
           created_at: string
           description: string
+          duration: string | null
           email: string | null
           id: string
           location: string
@@ -57,8 +60,11 @@ export type Database = {
         Insert: {
           budget?: number | null
           category: string
+          contact_email?: string | null
+          contact_phone?: number | null
           created_at?: string
           description: string
+          duration?: string | null
           email?: string | null
           id?: string
           location: string
@@ -71,8 +77,11 @@ export type Database = {
         Update: {
           budget?: number | null
           category?: string
+          contact_email?: string | null
+          contact_phone?: number | null
           created_at?: string
           description?: string
+          duration?: string | null
           email?: string | null
           id?: string
           location?: string

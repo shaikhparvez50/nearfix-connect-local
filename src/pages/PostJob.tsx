@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Upload, MapPin, Calendar, ArrowRight, Info, Clock, Trash2, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
 

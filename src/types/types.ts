@@ -62,3 +62,25 @@ export const SERVICE_CATEGORIES = [
   'Air Conditioning',
   'Other'
 ];
+
+// Database job posting type to match Supabase schema
+export interface DbJobPosting {
+  id: string;
+  user_id: string;
+  budget: number;
+  created_at: string;
+  updated_at: string;
+  Phone_Number?: number;
+  contact_phone?: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  status: string;
+  email?: string;
+  contact_email?: string;
+  duration?: string;
+  preferred_time?: string;
+  skills_required?: string[];
+  images?: string[];
+}
