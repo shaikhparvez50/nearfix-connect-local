@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
@@ -222,7 +221,7 @@ const PostJob = () => {
         return;
       }
 
-      // Create a properly typed object for insertion
+      // Create a properly typed object for insertion that matches the DbJobPosting type
       const jobData = {
         title: formData.title,
         description: formData.description,
@@ -233,15 +232,15 @@ const PostJob = () => {
         status: formData.status || 'open',
         created_at: timestamp,
         updated_at: timestamp,
-        skills_required: formData.skills_required,
-        duration: formData.duration,
-        preferred_time: formData.preferred_time,
-        contact_email: formData.contact_email,
-        contact_phone: formData.contact_phone,
+        skills_required: formData.skills_required || [],
+        duration: formData.duration || null,
+        preferred_time: formData.preferred_time || null,
+        contact_email: formData.contact_email || null,
+        contact_phone: formData.contact_phone || null, // Keep as string, matching our updated type
         images: uploadedImageUrls
       };
 
-      const { error } = await supabase.from('job_postings').insert([jobData]);
+      const { error } = await supabase.from('job_postings').insert(jobData);
 
       if (error) {
         setMessage(`❌ Error: ${error.message}`);

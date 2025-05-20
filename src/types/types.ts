@@ -1,4 +1,3 @@
-
 // Common type definitions for the application
 
 export interface JobPostingType {
@@ -67,20 +66,20 @@ export const SERVICE_CATEGORIES = [
 export interface DbJobPosting {
   id: string;
   user_id: string;
-  budget: number;
+  budget: number | null;
   created_at: string;
   updated_at: string;
-  Phone_Number?: number;
-  contact_phone?: string;
+  Phone_Number?: number | null;
+  contact_phone?: string | null; // Changed to string to match the form input
   title: string;
   description: string;
   category: string;
   location: string;
   status: string;
-  email?: string;
-  contact_email?: string;
-  duration?: string;
-  preferred_time?: string;
+  email?: string | null;
+  contact_email?: string | null;
+  duration?: string | null;
+  preferred_time?: string | null;
   skills_required?: string[];
   images?: string[];
 }

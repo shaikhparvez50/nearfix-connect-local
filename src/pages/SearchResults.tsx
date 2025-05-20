@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -137,7 +136,7 @@ const SearchResults = () => {
         
         if (jobsError) throw new Error(jobsError.message);
         
-        // Transform data to match JobPostingType
+        // Transform data to match JobPostingType, adding required properties
         const transformedJobs: JobPostingType[] = jobsData?.map(job => ({
           id: job.id,
           title: job.title,
@@ -148,7 +147,11 @@ const SearchResults = () => {
           created_at: job.created_at,
           status: job.status,
           user_id: job.user_id,
-          images: job.images || []
+          skills_required: job.skills_required || [],
+          images: job.images || [],
+          contact_email: job.contact_email || job.email, // Handle both fields
+          contact_phone: job.contact_phone || job.Phone_Number?.toString(),
+          duration: job.duration || ''
         })) || [];
         
         setJobs(transformedJobs);
