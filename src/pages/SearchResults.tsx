@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -9,7 +10,7 @@ import { Compass, MapPin, Search, Filter, Star, Clock, Briefcase, Camera, UserCi
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation as useLocationHook } from '@/hooks/useLocation';
-import { JobPostingType, ProviderType } from '@/types/types';
+import { JobPostingType, ProviderType, DbJobPosting } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -137,7 +138,7 @@ const SearchResults = () => {
         if (jobsError) throw new Error(jobsError.message);
         
         // Transform data to match JobPostingType, ensuring correct types
-        const transformedJobs: JobPostingType[] = (jobsData || []).map(job => {
+        const transformedJobs: JobPostingType[] = (jobsData || []).map((job: DbJobPosting) => {
           // Convert contact_phone to string if needed
           let contactPhone: string = '';
           if (job.contact_phone !== null) {
@@ -156,7 +157,6 @@ const SearchResults = () => {
             created_at: job.created_at,
             status: job.status,
             user_id: job.user_id,
-            // Handle potentially undefined properties with fallbacks
             skills_required: job.skills_required || [],
             images: job.images || [],
             contact_email: job.contact_email || job.email || "",

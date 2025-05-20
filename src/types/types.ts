@@ -71,7 +71,7 @@ export interface DbJobPosting {
   created_at: string;
   updated_at: string;
   Phone_Number?: number | null;
-  contact_phone?: number | null; // Using number type to match the database schema
+  contact_phone?: number | null; 
   title: string;
   description: string;
   category: string;
