@@ -1,3 +1,4 @@
+
 // Common type definitions for the application
 
 export interface JobPostingType {
@@ -70,7 +71,7 @@ export interface DbJobPosting {
   created_at: string;
   updated_at: string;
   Phone_Number?: number | null;
-  contact_phone?: string | null; // Changed to string to match the form input
+  contact_phone?: string | null; // This needs to be string to match the form input
   title: string;
   description: string;
   category: string;

@@ -236,7 +236,8 @@ const PostJob = () => {
         duration: formData.duration || null,
         preferred_time: formData.preferred_time || null,
         contact_email: formData.contact_email || null,
-        contact_phone: formData.contact_phone || null, // Keep as string, matching our updated type
+        // Convert to null if empty string to match expected types
+        contact_phone: formData.contact_phone ? formData.contact_phone : null,
         images: uploadedImageUrls
       };
 

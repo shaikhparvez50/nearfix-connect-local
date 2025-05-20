@@ -137,7 +137,7 @@ const SearchResults = () => {
         if (jobsError) throw new Error(jobsError.message);
         
         // Transform data to match JobPostingType, adding required properties
-        const transformedJobs: JobPostingType[] = jobsData?.map(job => ({
+        const transformedJobs: JobPostingType[] = (jobsData || []).map(job => ({
           id: job.id,
           title: job.title,
           description: job.description,
@@ -147,12 +147,13 @@ const SearchResults = () => {
           created_at: job.created_at,
           status: job.status,
           user_id: job.user_id,
+          // Handle potentially undefined properties with fallbacks
           skills_required: job.skills_required || [],
           images: job.images || [],
-          contact_email: job.contact_email || job.email, // Handle both fields
-          contact_phone: job.contact_phone || job.Phone_Number?.toString(),
-          duration: job.duration || ''
-        })) || [];
+          contact_email: job.contact_email || job.email || "",
+          contact_phone: job.contact_phone || (job.Phone_Number ? String(job.Phone_Number) : ""),
+          duration: job.duration || ""
+        }));
         
         setJobs(transformedJobs);
         
