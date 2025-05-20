@@ -50,8 +50,11 @@ export type Database = {
           duration: string | null
           email: string | null
           id: string
+          images: string[] | null
           location: string
           Phone_Number: number | null
+          preferred_time: string | null
+          skills_required: string[] | null
           status: string
           title: string
           updated_at: string
@@ -67,8 +70,11 @@ export type Database = {
           duration?: string | null
           email?: string | null
           id?: string
+          images?: string[] | null
           location: string
           Phone_Number?: number | null
+          preferred_time?: string | null
+          skills_required?: string[] | null
           status?: string
           title: string
           updated_at?: string
@@ -84,8 +90,11 @@ export type Database = {
           duration?: string | null
           email?: string | null
           id?: string
+          images?: string[] | null
           location?: string
           Phone_Number?: number | null
+          preferred_time?: string | null
+          skills_required?: string[] | null
           status?: string
           title?: string
           updated_at?: string

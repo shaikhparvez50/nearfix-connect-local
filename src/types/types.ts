@@ -1,4 +1,5 @@
 
+
 // Common type definitions for the application
 
 export interface JobPostingType {
@@ -84,3 +85,4 @@ export interface DbJobPosting {
   skills_required?: string[];
   images?: string[];
 }
+

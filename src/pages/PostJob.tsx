@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
@@ -245,6 +244,7 @@ const PostJob = () => {
       const { error } = await supabase.from('job_postings').insert(jobData);
 
       if (error) {
+        console.error('Supabase error:', error);
         setMessage(`❌ Error: ${error.message}`);
       } else {
         toast.success('Job posted successfully!');
