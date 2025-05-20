@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
@@ -22,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Upload, MapPin, Calendar, ArrowRight, Info, Clock, Trash2, ImagePlus } from 'lucide-react';
+import { Upload, MapPin, Calendar, ArrowRight, Info, Clock, Trash2, ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PostJob = () => {
@@ -49,6 +50,7 @@ const PostJob = () => {
   const [skillInput, setSkillInput] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [imageUploadError, setImageUploadError] = useState('');
 
   useEffect(() => {
     const getUser = async () => {
@@ -136,12 +138,31 @@ const PostJob = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
-    const newFiles = Array.from(files);
-    setImageFiles((prev) => [...prev, ...newFiles]);
+    // Check file sizes before adding
+    const maxSizeInMB = 5;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
     
-    // Generate preview URLs
-    const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
-    setImagePreviewUrls((prev) => [...prev, ...newPreviewUrls]);
+    const validFiles: File[] = [];
+    const newFiles = Array.from(files);
+    
+    newFiles.forEach(file => {
+      if (file.size > maxSizeInBytes) {
+        toast.error(`${file.name} exceeds the maximum size of ${maxSizeInMB}MB`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+    
+    if (validFiles.length > 0) {
+      setImageFiles((prev) => [...prev, ...validFiles]);
+      
+      // Generate preview URLs
+      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+      setImagePreviewUrls((prev) => [...prev, ...newPreviewUrls]);
+      
+      // Clear any previous errors
+      setImageUploadError('');
+    }
   };
 
   const removeImage = (index: number) => {
@@ -163,31 +184,59 @@ const PostJob = () => {
     
     const uploadedUrls: string[] = [];
     setUploading(true);
+    setImageUploadError('');
     
     try {
+      // Check if the bucket exists first
+      const { data: buckets, error: bucketError } = await supabase
+        .storage
+        .listBuckets();
+      
+      const jobImagesBucketExists = buckets?.some(bucket => bucket.name === 'job_images');
+      
+      if (bucketError) {
+        console.error('Error checking buckets:', bucketError);
+        throw new Error('Failed to check storage buckets');
+      }
+      
+      if (!jobImagesBucketExists) {
+        throw new Error('Storage bucket for job images not found');
+      }
+      
+      // Upload each file with more detailed error handling
       for (const file of imageFiles) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-        const filePath = `job_images/${fileName}`;
+        const filePath = `${fileName}`;
         
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data } = await supabase.storage
           .from('job_images')
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
           
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+        }
         
         // Get the public URL
         const { data: publicUrlData } = supabase.storage
           .from('job_images')
           .getPublicUrl(filePath);
           
-        uploadedUrls.push(publicUrlData.publicUrl);
+        if (publicUrlData) {
+          uploadedUrls.push(publicUrlData.publicUrl);
+        } else {
+          console.warn('Could not get public URL for', filePath);
+        }
       }
       
       return uploadedUrls;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading images:', error);
-      toast.error('Failed to upload images. Please try again.');
+      setImageUploadError(error.message || 'Failed to upload images. Please try again.');
       return [];
     } finally {
       setUploading(false);
@@ -201,14 +250,14 @@ const PostJob = () => {
     const timestamp = new Date().toISOString();
 
     try {
-      // Upload images first
+      // Upload images first if there are any
       let uploadedImageUrls: string[] = [];
       
       if (imageFiles.length > 0) {
         uploadedImageUrls = await uploadImages();
-        if (uploadedImageUrls.length === 0) {
+        if (uploadedImageUrls.length === 0 && imageUploadError) {
           setLoading(false);
-          setMessage('❌ Failed to upload images. Please try again.');
+          setMessage(`❌ ${imageUploadError}`);
           return;
         }
       }
@@ -250,9 +299,9 @@ const PostJob = () => {
         toast.success('Job posted successfully!');
         navigate('/job-confirmation');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting job:', error);
-      setMessage('❌ An unexpected error occurred. Please try again.');
+      setMessage(`❌ An unexpected error occurred: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -499,10 +548,11 @@ const PostJob = () => {
                             accept="image/*"
                             className="hidden"
                             onChange={handleImageChange}
+                            disabled={uploading}
                           />
                           <label 
                             htmlFor="images"
-                            className="flex flex-col items-center cursor-pointer"
+                            className={`flex flex-col items-center cursor-pointer ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <ImagePlus className="h-10 w-10 text-gray-400 mb-2" />
                             <span className="text-sm font-medium text-nearfix-600">Click to upload images</span>
@@ -510,9 +560,15 @@ const PostJob = () => {
                           </label>
                         </div>
                         
+                        {imageUploadError && (
+                          <div className="mt-2 text-sm text-red-500">
+                            {imageUploadError}
+                          </div>
+                        )}
+                        
                         {imagePreviewUrls.length > 0 && (
                           <div className="mt-4">
-                            <Label className="mb-2 block">Uploaded Images</Label>
+                            <Label className="mb-2 block">Uploaded Images ({imagePreviewUrls.length})</Label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                               {imagePreviewUrls.map((url, index) => (
                                 <div key={index} className="relative group">
@@ -525,6 +581,7 @@ const PostJob = () => {
                                     type="button"
                                     onClick={() => removeImage(index)}
                                     className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                    disabled={uploading}
                                   >
                                     <Trash2 className="h-4 w-4 text-red-500" />
                                   </button>
@@ -607,7 +664,12 @@ const PostJob = () => {
                           loading || uploading ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
                       >
-                        {loading || uploading ? 'Posting...' : 'Post Job'}
+                        {loading || uploading ? (
+                          <span className="flex items-center">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Posting...
+                          </span>
+                        ) : 'Post Job'}
                       </Button>
                     )}
                   </div>
