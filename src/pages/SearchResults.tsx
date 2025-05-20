@@ -136,24 +136,34 @@ const SearchResults = () => {
         
         if (jobsError) throw new Error(jobsError.message);
         
-        // Transform data to match JobPostingType, adding required properties
-        const transformedJobs: JobPostingType[] = (jobsData || []).map(job => ({
-          id: job.id,
-          title: job.title,
-          description: job.description,
-          category: job.category,
-          location: job.location,
-          budget: job.budget || 0,
-          created_at: job.created_at,
-          status: job.status,
-          user_id: job.user_id,
-          // Handle potentially undefined properties with fallbacks
-          skills_required: job.skills_required || [],
-          images: job.images || [],
-          contact_email: job.contact_email || job.email || "",
-          contact_phone: job.contact_phone || (job.Phone_Number ? String(job.Phone_Number) : ""),
-          duration: job.duration || ""
-        }));
+        // Transform data to match JobPostingType, ensuring correct types
+        const transformedJobs: JobPostingType[] = (jobsData || []).map(job => {
+          // Convert contact_phone to string if needed
+          let contactPhone: string = '';
+          if (job.contact_phone !== null) {
+            contactPhone = String(job.contact_phone);
+          } else if (job.Phone_Number !== null) {
+            contactPhone = String(job.Phone_Number);
+          }
+
+          return {
+            id: job.id,
+            title: job.title,
+            description: job.description,
+            category: job.category,
+            location: job.location,
+            budget: job.budget || 0,
+            created_at: job.created_at,
+            status: job.status,
+            user_id: job.user_id,
+            // Handle potentially undefined properties with fallbacks
+            skills_required: job.skills_required || [],
+            images: job.images || [],
+            contact_email: job.contact_email || job.email || "",
+            contact_phone: contactPhone,
+            duration: job.duration || ""
+          };
+        });
         
         setJobs(transformedJobs);
         

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../integrations/supabase/client';
@@ -236,8 +237,8 @@ const PostJob = () => {
         duration: formData.duration || null,
         preferred_time: formData.preferred_time || null,
         contact_email: formData.contact_email || null,
-        // Convert to null if empty string to match expected types
-        contact_phone: formData.contact_phone ? formData.contact_phone : null,
+        // Convert to number if not empty, otherwise null
+        contact_phone: formData.contact_phone ? Number(formData.contact_phone) : null,
         images: uploadedImageUrls
       };
 
