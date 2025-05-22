@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -33,10 +34,10 @@ const ProviderProfile = () => {
         }
 
         if (sellerProfile) {
-          // Get user details for additional info
+          // Get user details for additional info - checking columns that actually exist
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('email, phone')
+            .select('email')
             .eq('id', sellerProfile.user_id)
             .single();
 
@@ -69,7 +70,7 @@ const ProviderProfile = () => {
             address: locationData?.address || '',
             profile_image: sellerProfile.profile_image || undefined,
             email: userData?.email || '',
-            phone: userData?.phone || '',
+            phone: '', // No phone column in users table, leave empty
             verified: sellerProfile.is_verified || false,
             work_samples: sellerProfile.work_samples || []
           });
@@ -90,8 +91,11 @@ const ProviderProfile = () => {
   }, [id]);
 
   const handleCall = () => {
-    if (provider?.phone) {
+    if (provider?.phone && provider.phone.trim() !== '') {
       window.location.href = `tel:${provider.phone}`;
+    } else {
+      // If no phone number is available, we could show a message or do nothing
+      console.log("No phone number available");
     }
   };
 
@@ -176,7 +180,7 @@ const ProviderProfile = () => {
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
-                      {provider?.phone && (
+                      {provider?.phone && provider.phone.trim() !== '' && (
                         <Button 
                           className="w-full sm:w-auto bg-nearfix-600 hover:bg-nearfix-700" 
                           onClick={handleCall}
