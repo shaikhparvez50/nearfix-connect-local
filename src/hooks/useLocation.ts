@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface LocationState {
@@ -19,7 +19,7 @@ export const useLocation = () => {
     error: null
   });
 
-  const detectLocation = () => {
+  const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setLocation(prev => ({ 
         ...prev, 
@@ -59,6 +59,13 @@ export const useLocation = () => {
               error: null
             });
             
+            // Store location in localStorage for persistence
+            localStorage.setItem('userLocation', JSON.stringify({
+              latitude,
+              longitude,
+              address
+            }));
+            
             toast.success('Location detected successfully');
             resolve(true);
           } catch (error) {
@@ -69,6 +76,13 @@ export const useLocation = () => {
               loading: false,
               error: error instanceof Error ? error.message : 'Unknown error occurred'
             });
+            
+            // Store basic location in localStorage even without address
+            localStorage.setItem('userLocation', JSON.stringify({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            }));
+            
             toast.warning('Location detected, but unable to get address');
             resolve(true);
           }
@@ -86,12 +100,31 @@ export const useLocation = () => {
         },
         { 
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 15000, // Increased timeout
           maximumAge: 0
         }
       );
     });
-  };
+  }, []);
+
+  // Attempt to restore location from localStorage on mount
+  useEffect(() => {
+    const storedLocation = localStorage.getItem('userLocation');
+    if (storedLocation) {
+      try {
+        const parsedLocation = JSON.parse(storedLocation);
+        setLocation(prev => ({
+          ...prev,
+          latitude: parsedLocation.latitude,
+          longitude: parsedLocation.longitude,
+          address: parsedLocation.address || null
+        }));
+      } catch (e) {
+        // Invalid JSON in localStorage, ignore it
+        localStorage.removeItem('userLocation');
+      }
+    }
+  }, []);
 
   const getLocationErrorMessage = (error: GeolocationPositionError) => {
     switch (error.code) {
