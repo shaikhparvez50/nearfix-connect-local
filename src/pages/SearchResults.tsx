@@ -206,6 +206,15 @@ const SearchResults = () => {
     });
   };
 
+  // Update the Contact button click handler to navigate to provider profile
+  const handleProviderContactClick = (providerId: string, phone?: string) => {
+    if (phone) {
+      window.location.href = `tel:${phone}`;
+    } else {
+      navigate(`/provider/${providerId}`);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="bg-gray-50 min-h-screen py-4 md:py-8 px-4 md:px-0">
@@ -367,7 +376,7 @@ const SearchResults = () => {
                                 <Button 
                                   size="sm" 
                                   className="bg-nearfix-600 w-full sm:w-auto" 
-                                  onClick={() => navigate(`/provider/${provider.provider_id}`)}
+                                  onClick={() => handleProviderContactClick(provider.provider_id, provider.phone)}
                                 >
                                   <Phone className="h-4 w-4 mr-2" />
                                   Contact
@@ -448,7 +457,6 @@ const SearchResults = () => {
                                 if (job.contact_phone) {
                                   window.location.href = `tel:${job.contact_phone}`;
                                 } else {
-                                  // Navigate to job details if phone not available
                                   navigate(`/job/${job.id}`);
                                 }
                               }}

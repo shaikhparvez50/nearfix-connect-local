@@ -72,12 +72,6 @@ const JobDetails = () => {
     }
   };
 
-  const handleEmail = () => {
-    if (job?.contact_email) {
-      window.location.href = `mailto:${job.contact_email}`;
-    }
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -244,13 +238,13 @@ const JobDetails = () => {
               <h2 className="font-semibold text-lg mb-4">Contact Information</h2>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-2">
-                  {job.contact_email && (
+                  {job?.contact_email && (
                     <div className="flex items-center">
                       <Mail className="h-5 w-5 text-nearfix-500 mr-2" />
                       <span>{job.contact_email}</span>
                     </div>
                   )}
-                  {job.contact_phone && (
+                  {job?.contact_phone && (
                     <div className="flex items-center">
                       <Phone className="h-5 w-5 text-nearfix-500 mr-2" />
                       <span>{job.contact_phone}</span>
@@ -259,23 +253,13 @@ const JobDetails = () => {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
-                  {job.contact_phone && (
+                  {job?.contact_phone && (
                     <Button 
                       className="w-full sm:w-auto bg-nearfix-600 hover:bg-nearfix-700" 
                       onClick={handleCall}
                     >
                       <Phone className="h-4 w-4 mr-2" />
                       Call Now
-                    </Button>
-                  )}
-                  {job.contact_email && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full sm:w-auto" 
-                      onClick={handleEmail}
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Email
                     </Button>
                   )}
                 </div>

@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const ProviderProfile = () => {
   const { id } = useParams<{ id: string }>();
-  const [provider, setProvider] = useState<ProviderType & { profile_image?: string, email?: string, phone?: string }>(); 
+  const [provider, setProvider] = useState<ProviderType>(); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +36,7 @@ const ProviderProfile = () => {
           // Get user details for additional info
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('email')
+            .select('email, phone')
             .eq('id', sellerProfile.user_id)
             .single();
 
@@ -69,6 +69,7 @@ const ProviderProfile = () => {
             address: locationData?.address || '',
             profile_image: sellerProfile.profile_image || undefined,
             email: userData?.email || '',
+            phone: userData?.phone || '',
             verified: sellerProfile.is_verified || false,
             work_samples: sellerProfile.work_samples || []
           });
@@ -91,12 +92,6 @@ const ProviderProfile = () => {
   const handleCall = () => {
     if (provider?.phone) {
       window.location.href = `tel:${provider.phone}`;
-    }
-  };
-
-  const handleEmail = () => {
-    if (provider?.email) {
-      window.location.href = `mailto:${provider.email}`;
     }
   };
 
@@ -142,7 +137,7 @@ const ProviderProfile = () => {
             <div className="px-4 pb-6 relative">
               <div className="flex flex-col md:flex-row md:items-end -mt-16 mb-4">
                 <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-white bg-white">
-                  {provider.profile_image ? (
+                  {provider?.profile_image ? (
                     <AvatarImage 
                       src={provider.profile_image} 
                       alt={provider.business_name} 
@@ -158,9 +153,9 @@ const ProviderProfile = () => {
                 <div className="mt-4 md:mt-0 md:ml-6 flex-1">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                     <div>
-                      <h1 className="text-2xl font-bold">{provider.business_name}</h1>
+                      <h1 className="text-2xl font-bold">{provider?.business_name}</h1>
                       <div className="flex items-center mt-1">
-                        {provider.verified && (
+                        {provider?.verified && (
                           <Badge className="mr-2 bg-green-100 text-green-800 border-green-200">
                             Verified
                           </Badge>
@@ -170,18 +165,18 @@ const ProviderProfile = () => {
                             <Star
                               key={i}
                               className="h-4 w-4 fill-current"
-                              fillOpacity={i < Math.floor(provider.rating || 0) ? 1 : 0.2}
+                              fillOpacity={i < Math.floor(provider?.rating || 0) ? 1 : 0.2}
                             />
                           ))}
                           <span className="ml-1 text-sm text-gray-600">
-                            ({provider.reviews || 0} reviews)
+                            ({provider?.reviews || 0} reviews)
                           </span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
-                      {provider.phone && (
+                      {provider?.phone && (
                         <Button 
                           className="w-full sm:w-auto bg-nearfix-600 hover:bg-nearfix-700" 
                           onClick={handleCall}
@@ -190,23 +185,13 @@ const ProviderProfile = () => {
                           Call Now
                         </Button>
                       )}
-                      {provider.email && (
-                        <Button 
-                          variant="outline" 
-                          className="w-full sm:w-auto" 
-                          onClick={handleEmail}
-                        >
-                          <Mail className="h-4 w-4 mr-2" />
-                          Email
-                        </Button>
-                      )}
                     </div>
                   </div>
                 </div>
               </div>
               
               <div className="flex flex-wrap gap-2 mb-4">
-                {provider.service_types.map((service, idx) => (
+                {provider?.service_types.map((service, idx) => (
                   <Badge 
                     key={idx}
                     variant="secondary" 
@@ -217,7 +202,7 @@ const ProviderProfile = () => {
                 ))}
               </div>
               
-              {provider.address && (
+              {provider?.address && (
                 <div className="flex items-start text-gray-600 mb-4">
                   <MapPin className="h-5 w-5 text-nearfix-500 mt-0.5 flex-shrink-0" />
                   <span className="ml-2">{provider.address}</span>
@@ -226,7 +211,7 @@ const ProviderProfile = () => {
               
               <div className="border-t border-gray-200 pt-4 mt-2">
                 <h2 className="font-semibold text-lg mb-2">About</h2>
-                <p className="text-gray-700">{provider.description || 'No description provided.'}</p>
+                <p className="text-gray-700">{provider?.description || 'No description provided.'}</p>
               </div>
             </div>
           </div>
@@ -243,8 +228,8 @@ const ProviderProfile = () => {
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg mb-4">Services Offered</h3>
                   <ul className="space-y-3">
-                    {provider.service_types.length > 0 ? (
-                      provider.service_types.map((service, idx) => (
+                    {provider?.service_types.length > 0 ? (
+                      provider?.service_types.map((service, idx) => (
                         <li key={idx} className="flex items-start">
                           <span className="text-nearfix-600 mr-2">•</span>
                           <span>{service}</span>
@@ -262,9 +247,9 @@ const ProviderProfile = () => {
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg mb-4">Work Samples</h3>
-                  {provider.work_samples && provider.work_samples.length > 0 ? (
+                  {provider?.work_samples && provider?.work_samples.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {provider.work_samples.map((image, idx) => (
+                      {provider?.work_samples.map((image, idx) => (
                         <div key={idx} className="aspect-square rounded-md overflow-hidden bg-gray-100">
                           <img 
                             src={image} 
@@ -287,7 +272,7 @@ const ProviderProfile = () => {
                   <h3 className="font-semibold text-lg mb-4">Pricing Information</h3>
                   <div className="flex justify-between items-center border-b border-gray-200 pb-3 mb-3">
                     <span className="font-medium">Hourly Rate</span>
-                    <span className="text-lg font-semibold">₹{provider.hourly_rate}/hr</span>
+                    <span className="text-lg font-semibold">₹{provider?.hourly_rate}/hr</span>
                   </div>
                   <p className="text-gray-600 text-sm">
                     * Actual pricing may vary based on the complexity and requirements of your project.
