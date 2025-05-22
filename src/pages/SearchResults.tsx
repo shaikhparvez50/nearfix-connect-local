@@ -20,7 +20,7 @@ const SearchResults = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('service') || '');
   const [searchLocation, setSearchLocation] = useState(searchParams.get('location') || '');
   const [activeTab, setActiveTab] = useState('providers');
-  const [providers, setProviders] = useState<(ProviderType & { profile_image?: string })[]>([]);
+  const [providers, setProviders] = useState<ProviderType[]>([]);
   const [jobs, setJobs] = useState<JobPostingType[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -184,7 +184,6 @@ const SearchResults = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     navigate(`/search?service=${encodeURIComponent(searchTerm)}&location=${encodeURIComponent(searchLocation)}`);
-    // Re-run the search effect
   };
 
   const handleDetectLocation = () => {
@@ -365,15 +364,11 @@ const SearchResults = () => {
                                     View Profile
                                   </Button>
                                 </Link>
-                                <Button size="sm" className="bg-nearfix-600 w-full sm:w-auto" onClick={() => {
-                                  // Try to get the provider's phone number and call if available
-                                  if (provider.phone) {
-                                    window.location.href = `tel:${provider.phone}`;
-                                  } else {
-                                    // Navigate to profile page if phone not available
-                                    navigate(`/provider/${provider.provider_id}`);
-                                  }
-                                }}>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-nearfix-600 w-full sm:w-auto" 
+                                  onClick={() => navigate(`/provider/${provider.provider_id}`)}
+                                >
                                   <Phone className="h-4 w-4 mr-2" />
                                   Contact
                                 </Button>

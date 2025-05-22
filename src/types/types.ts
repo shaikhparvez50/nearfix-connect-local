@@ -1,3 +1,4 @@
+
 // Common type definitions for the application
 
 export interface JobPostingType {
@@ -35,6 +36,8 @@ export interface ProviderType {
   longitude?: number;
   profile_image?: string;
   work_samples?: string[];
+  phone?: string;
+  email?: string;
 }
 
 export interface UserLocationType {

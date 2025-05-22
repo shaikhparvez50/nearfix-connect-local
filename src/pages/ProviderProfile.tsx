@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -37,7 +36,7 @@ const ProviderProfile = () => {
           // Get user details for additional info
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('email, phone')
+            .select('email')
             .eq('id', sellerProfile.user_id)
             .single();
 
@@ -45,6 +44,18 @@ const ProviderProfile = () => {
             console.error('Error fetching user data:', userError);
           }
 
+          // Also try to get geo_locations for address
+          const { data: locationData, error: locationError } = await supabase
+            .from('geo_locations')
+            .select('address')
+            .eq('user_id', sellerProfile.user_id)
+            .single();
+
+          if (locationError && locationError.code !== 'PGRST116') {
+            console.error('Error fetching location data:', locationError);
+          }
+
+          // Use appropriate field mapping based on actual database schema
           setProvider({
             provider_id: sellerProfile.id,
             user_id: sellerProfile.user_id,
@@ -52,14 +63,13 @@ const ProviderProfile = () => {
             service_types: sellerProfile.services || [],
             description: sellerProfile.description || '',
             hourly_rate: sellerProfile.hourly_rate || 0,
-            rating: sellerProfile.rating || 0,
-            reviews: sellerProfile.reviews_count || 0,
+            rating: 0, // Default value since it's not in the schema
+            reviews: 0, // Default value since it's not in the schema
             distance: 0,
-            address: sellerProfile.address || '',
+            address: locationData?.address || '',
             profile_image: sellerProfile.profile_image || undefined,
             email: userData?.email || '',
-            phone: userData?.phone || '',
-            verified: sellerProfile.verified || false,
+            verified: sellerProfile.is_verified || false,
             work_samples: sellerProfile.work_samples || []
           });
         } else {
