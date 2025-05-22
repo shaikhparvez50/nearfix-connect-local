@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Link } from "react-router-dom";
 import { Plus, Clock, CheckCircle, AlertCircle, MapPin, Store } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useLocation } from "@/hooks/useLocation"; 
