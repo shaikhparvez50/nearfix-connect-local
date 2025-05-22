@@ -42,12 +42,6 @@ const Navbar = () => {
             <Link to="/how-it-works" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
               How It Works
             </Link>
-            <Link to="/about" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
-              About Us
-            </Link>
-            <Link to="/contact" className="text-sm font-medium text-nearfix-900 hover:text-nearfix-700 transition-colors">
-              Contact
-            </Link>
           </nav>
         </div>
         
@@ -122,20 +116,6 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               How It Works
-            </Link>
-            <Link
-              to="/about"
-              className="block w-full p-2 text-left rounded-md hover:bg-nearfix-50"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              About Us
-            </Link>
-            <Link
-              to="/contact"
-              className="block w-full p-2 text-left rounded-md hover:bg-nearfix-50"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Contact
             </Link>
             <div className="pt-2 flex items-center">
               <LanguageSwitcher />

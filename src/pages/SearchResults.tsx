@@ -1,12 +1,11 @@
-
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Compass, MapPin, Search, Filter, Star, Clock, Briefcase, Camera, UserCircle2 } from 'lucide-react';
+import { Compass, MapPin, Search, Filter, Star, Clock, Briefcase, Camera, UserCircle2, Phone, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation as useLocationHook } from '@/hooks/useLocation';
@@ -361,10 +360,21 @@ const SearchResults = () => {
                                 {provider.description || 'No description provided.'}
                               </p>
                               <div className="mt-4 flex flex-wrap justify-end gap-2">
-                                <Button variant="outline" size="sm" className="text-nearfix-600 w-full sm:w-auto">
-                                  View Profile
-                                </Button>
-                                <Button size="sm" className="bg-nearfix-600 w-full sm:w-auto">
+                                <Link to={`/provider/${provider.provider_id}`} className="w-full sm:w-auto">
+                                  <Button variant="outline" size="sm" className="text-nearfix-600 w-full">
+                                    View Profile
+                                  </Button>
+                                </Link>
+                                <Button size="sm" className="bg-nearfix-600 w-full sm:w-auto" onClick={() => {
+                                  // Try to get the provider's phone number and call if available
+                                  if (provider.phone) {
+                                    window.location.href = `tel:${provider.phone}`;
+                                  } else {
+                                    // Navigate to profile page if phone not available
+                                    navigate(`/provider/${provider.provider_id}`);
+                                  }
+                                }}>
+                                  <Phone className="h-4 w-4 mr-2" />
                                   Contact
                                 </Button>
                               </div>
@@ -431,10 +441,24 @@ const SearchResults = () => {
                             {job.description}
                           </p>
                           <div className="mt-4 flex flex-wrap justify-end gap-2">
-                            <Button variant="outline" size="sm" className="text-nearfix-600 w-full sm:w-auto">
-                              View Details
-                            </Button>
-                            <Button size="sm" className="ml-0 sm:ml-2 bg-nearfix-600 w-full sm:w-auto">
+                            <Link to={`/job/${job.id}`} className="w-full sm:w-auto">
+                              <Button variant="outline" size="sm" className="text-nearfix-600 w-full">
+                                View Details
+                              </Button>
+                            </Link>
+                            <Button 
+                              size="sm" 
+                              className="ml-0 sm:ml-2 bg-nearfix-600 w-full sm:w-auto"
+                              onClick={() => {
+                                if (job.contact_phone) {
+                                  window.location.href = `tel:${job.contact_phone}`;
+                                } else {
+                                  // Navigate to job details if phone not available
+                                  navigate(`/job/${job.id}`);
+                                }
+                              }}
+                            >
+                              <Phone className="h-4 w-4 mr-2" />
                               Apply
                             </Button>
                           </div>

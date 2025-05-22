@@ -7,7 +7,7 @@ const Footer = () => {
   return (
     <footer className="bg-white border-t border-gray-200">
       <div className="container mx-auto px-4 py-10 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           <div>
             <Link to="/" className="flex items-center">
               <span className="text-2xl font-bold font-heading text-nearfix-800">
@@ -63,21 +63,6 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-
-          <div>
-            <h3 className="font-heading text-base font-semibold text-gray-900">For Service Providers</h3>
-            <ul className="mt-4 space-y-2">
-              <li>
-                <Link to="/become-seller" className="text-sm text-gray-600 hover:text-nearfix-600">Become a Seller</Link>
-              </li>
-              <li>
-                <Link to="/seller-tips" className="text-sm text-gray-600 hover:text-nearfix-600">Success Tips</Link>
-              </li>
-              <li>
-                <Link to="/seller-faq" className="text-sm text-gray-600 hover:text-nearfix-600">FAQs</Link>
-              </li>
-            </ul>
-          </div>
           
           <div>
             <h3 className="font-heading text-base font-semibold text-gray-900">Contact Us</h3>
@@ -107,7 +92,6 @@ const Footer = () => {
           <div className="flex space-x-4 text-xs text-gray-500">
             <Link to="/terms" className="hover:text-nearfix-600">Terms of Service</Link>
             <Link to="/privacy" className="hover:text-nearfix-600">Privacy Policy</Link>
-            <Link to="/about" className="hover:text-nearfix-600">About</Link>
           </div>
         </div>
       </div>

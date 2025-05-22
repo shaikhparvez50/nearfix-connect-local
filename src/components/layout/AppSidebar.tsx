@@ -22,7 +22,6 @@ import {
   DatabaseBackup,
   Smartphone,
   Store,
-  Handshake
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -171,19 +170,6 @@ export function AppSidebar() {
                   <button onClick={() => navigate('/how-it-works')}>
                     <DatabaseBackup />
                     <span>How It Works</span>
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  isActive={isActive('/about')}
-                  tooltip="About Us"
-                >
-                  <button onClick={() => navigate('/about')}>
-                    <Smartphone />
-                    <span>About Us</span>
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>

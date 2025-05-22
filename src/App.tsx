@@ -16,11 +16,11 @@ import JobConfirmation from "./pages/JobConfirmation";
 import SellerConfirmation from "./pages/SellerConfirmation";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
-import AboutUs from "./pages/AboutUs";
-import ContactUs from "./pages/ContactUs";
 import Services from "./pages/Services";
 import HowItWorks from "./pages/HowItWorks";
 import Dashboard from "./pages/Dashboard";
+import ProviderProfile from "./pages/ProviderProfile";
+import JobDetails from "./pages/JobDetails";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useState } from "react";
 
@@ -44,10 +44,10 @@ const App = () => {
                     <Route path="/search" element={<SearchResults />} />
                     <Route path="/signin" element={<SignIn />} />
                     <Route path="/signup" element={<SignUp />} />
-                    <Route path="/about" element={<AboutUs />} />
-                    <Route path="/contact" element={<ContactUs />} />
                     <Route path="/services" element={<Services />} />
                     <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route path="/provider/:id" element={<ProviderProfile />} />
+                    <Route path="/job/:id" element={<JobDetails />} />
                     
                     {/* Protected routes */}
                     <Route element={<ProtectedRoute />}>
