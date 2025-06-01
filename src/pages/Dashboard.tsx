@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -167,22 +166,24 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <div className="text-center py-6 md:py-8 bg-white rounded-md">
-                    <AlertCircle className="mx-auto mb-3 h-8 w-8 md:h-10 md:w-10 text-gray-400" />
-                    <h3 className="text-base font-medium text-gray-900 mb-1">No active jobs found</h3>
-                    <p className="text-xs md:text-sm text-gray-600 mb-4 px-4">
-                      You don't have any active job postings at the moment.
-                    </p>
-                    <div className="flex flex-row flex-wrap justify-center gap-2 px-4">
-                      <Button asChild className="bg-nearfix-600 hover:bg-nearfix-700 text-xs h-8">
-                        <Link to="/post-job">
-                          <Plus className="mr-1 h-3 w-3" /> Post Job
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <Button asChild className="bg-nearfix-600 hover:bg-nearfix-700 text-sm px-6 py-3">
+                        <Link to="/search">
+                          Find Service Providers
                         </Link>
                       </Button>
-                      <Button asChild className="bg-nearfix-600 hover:bg-nearfix-700 text-xs h-8">
-                        <Link to="/become-seller">
-                          <Store className="mr-1 h-3 w-3" /> Create Shop
-                        </Link>
-                      </Button>
+                      <div className="flex flex-row flex-wrap justify-center gap-2">
+                        <Button asChild variant="outline" className="text-xs h-8">
+                          <Link to="/post-job">
+                            <Plus className="mr-1 h-3 w-3" /> Post Job
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline" className="text-xs h-8">
+                          <Link to="/become-seller">
+                            <Store className="mr-1 h-3 w-3" /> Create Shop
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -294,4 +295,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
