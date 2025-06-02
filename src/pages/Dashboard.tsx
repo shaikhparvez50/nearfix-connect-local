@@ -3,7 +3,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { Plus, Clock, CheckCircle, AlertCircle, MapPin, Store, Settings } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertCircle, MapPin, Store, Settings, User, Mail, Shield, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
@@ -232,34 +232,87 @@ const Dashboard = () => {
                 )}
               </TabsContent>
               
-              <TabsContent value="profile" className="bg-white p-3 md:p-4 rounded-md shadow-sm">
-                <h2 className="font-medium text-base md:text-lg mb-3 md:mb-4">Profile Settings</h2>
-                <p className="text-xs md:text-sm text-gray-600 mb-4">
-                  Manage your personal information, contact details, and preferences.
-                </p>
-                <div className="grid gap-4 max-w-2xl">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <h3 className="font-medium text-sm md:text-base mb-1">Personal Information</h3>
-                    <p className="text-xs md:text-sm text-gray-500 mb-2">Update your name, photo and personal details</p>
-                    <Button variant="outline" size="sm" className="text-xs h-8">
-                      Edit Personal Info
-                    </Button>
-                  </div>
-                  
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <h3 className="font-medium text-sm md:text-base mb-1">Contact Information</h3>
-                    <p className="text-xs md:text-sm text-gray-500 mb-2">Manage your contact details and notification preferences</p>
-                    <Button variant="outline" size="sm" className="text-xs h-8">
-                      Edit Contact Info
-                    </Button>
-                  </div>
-                  
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <h3 className="font-medium text-sm md:text-base mb-1">Security Settings</h3>
-                    <p className="text-xs md:text-sm text-gray-500 mb-2">Update your security preferences and account settings</p>
-                    <Button variant="outline" size="sm" className="text-xs h-8">
-                      Edit Security Settings
-                    </Button>
+              <TabsContent value="profile" className="space-y-4">
+                <div className="grid gap-4 lg:gap-6">
+                  <div className="bg-white rounded-lg border shadow-sm">
+                    <div className="p-4 md:p-6 border-b">
+                      <h2 className="font-medium text-lg md:text-xl text-gray-900">Profile Settings</h2>
+                      <p className="text-sm md:text-base text-gray-600 mt-1">
+                        Manage your personal information, contact details, and preferences.
+                      </p>
+                    </div>
+                    
+                    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+                      <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+                        <Card className="border border-gray-200 hover:border-nearfix-300 transition-colors">
+                          <CardContent className="p-4 md:p-6">
+                            <div className="flex items-start gap-3 md:gap-4">
+                              <div className="p-2 md:p-3 bg-nearfix-50 rounded-lg">
+                                <User className="h-4 w-4 md:h-5 md:w-5 text-nearfix-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-sm md:text-base text-gray-900 mb-1">
+                                  Personal Information
+                                </h3>
+                                <p className="text-xs md:text-sm text-gray-500 mb-2">Update your name, photo and personal details</p>
+                                <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                  <Edit className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                                  Edit Profile
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="border border-gray-200 hover:border-nearfix-300 transition-colors">
+                          <CardContent className="p-4 md:p-6">
+                            <div className="flex items-start gap-3 md:gap-4">
+                              <div className="p-2 md:p-3 bg-green-50 rounded-lg">
+                                <Mail className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-sm md:text-base text-gray-900 mb-1">
+                                  Contact Information
+                                </h3>
+                                <p className="text-xs md:text-sm text-gray-500 mb-2">Manage your contact details and notification preferences</p>
+                                <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                  <Edit className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                                  Edit Contact
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="border border-gray-200 hover:border-nearfix-300 transition-colors lg:col-span-2">
+                          <CardContent className="p-4 md:p-6">
+                            <div className="flex items-start gap-3 md:gap-4">
+                              <div className="p-2 md:p-3 bg-red-50 rounded-lg">
+                                <Shield className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-sm md:text-base text-gray-900 mb-1">
+                                  Security Settings
+                                </h3>
+                                <p className="text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
+                                  Update your security preferences, password, and account settings
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                    <Edit className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                                    Change Password
+                                  </Button>
+                                  <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                    <Shield className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                                    Security Settings
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </TabsContent>

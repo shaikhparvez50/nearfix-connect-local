@@ -11,7 +11,6 @@ import {
   LogOut
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import LanguageSwitcher from "./LanguageSwitcher";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -46,8 +45,6 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <LanguageSwitcher className="hidden md:flex mr-2" />
-          
           <Link to="/search">
             <Button variant="outline" size="sm" className="hidden md:inline-flex">
               <Search className="h-4 w-4 mr-2" />
@@ -117,9 +114,6 @@ const Navbar = () => {
             >
               How It Works
             </Link>
-            <div className="pt-2 flex items-center">
-              <LanguageSwitcher />
-            </div>
             <div className="pt-2 flex flex-col space-y-2">
               <Link to="/search" onClick={() => setIsMenuOpen(false)}>
                 <Button variant="outline" className="w-full justify-start">
