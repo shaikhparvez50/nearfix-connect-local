@@ -1,7 +1,6 @@
 
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Mail, Phone, Twitter } from "lucide-react";
-import LanguageSwitcher from "./LanguageSwitcher";
 
 const Footer = () => {
   return (
@@ -74,12 +73,6 @@ const Footer = () => {
               <li className="flex items-center text-gray-600">
                 <Mail className="h-4 w-4 mr-2 text-nearfix-600" />
                 <a href="mailto:shaikhparbej50@gmail.com" className="text-sm hover:text-nearfix-600 break-all">shaikhparbej50@gmail.com</a>
-              </li>
-              <li className="mt-3">
-                <span className="text-sm text-gray-600">Language:</span>
-                <div className="mt-1">
-                  <LanguageSwitcher />
-                </div>
               </li>
             </ul>
           </div>
