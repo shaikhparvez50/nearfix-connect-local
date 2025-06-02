@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -254,8 +255,8 @@ const Dashboard = () => {
                                 <h3 className="font-medium text-sm md:text-base text-gray-900 mb-1">
                                   Personal Information
                                 </h3>
-                                <p className="text-xs md:text-sm text-gray-500 mb-2">Update your name, photo and personal details</p>
-                                <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                <p className="text-xs md:text-sm text-gray-500 mb-3">Update your name, photo and personal details</p>
+                                <Button variant="outline" className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9 px-3 md:px-4">
                                   <Edit className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                                   Edit Profile
                                 </Button>
@@ -274,8 +275,8 @@ const Dashboard = () => {
                                 <h3 className="font-medium text-sm md:text-base text-gray-900 mb-1">
                                   Contact Information
                                 </h3>
-                                <p className="text-xs md:text-sm text-gray-500 mb-2">Manage your contact details and notification preferences</p>
-                                <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                <p className="text-xs md:text-sm text-gray-500 mb-3">Manage your contact details and notification preferences</p>
+                                <Button variant="outline" className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9 px-3 md:px-4">
                                   <Edit className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                                   Edit Contact
                                 </Button>
@@ -294,15 +295,15 @@ const Dashboard = () => {
                                 <h3 className="font-medium text-sm md:text-base text-gray-900 mb-1">
                                   Security Settings
                                 </h3>
-                                <p className="text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
+                                <p className="text-xs md:text-sm text-gray-600 mb-4">
                                   Update your security preferences, password, and account settings
                                 </p>
-                                <div className="flex flex-wrap gap-2">
-                                  <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                                  <Button variant="outline" className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9 px-3 md:px-4">
                                     <Edit className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                                     Change Password
                                   </Button>
-                                  <Button variant="outline" size="sm" className="text-xs md:text-sm h-8 md:h-9">
+                                  <Button variant="outline" className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9 px-3 md:px-4">
                                     <Shield className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                                     Security Settings
                                   </Button>
