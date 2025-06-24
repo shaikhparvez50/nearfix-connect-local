@@ -19,7 +19,13 @@ export const useLocation = () => {
     error: null
   });
 
-  const detectLocation = useCallback(() => {
+  const detectLocation = useCallback((forceReload = false) => {
+    // If location already exists and we're not forcing a reload, return success
+    if (!forceReload && location.latitude && location.longitude) {
+      toast.success('Location already available');
+      return Promise.resolve(true);
+    }
+
     if (!navigator.geolocation) {
       setLocation(prev => ({ 
         ...prev, 
@@ -105,7 +111,7 @@ export const useLocation = () => {
         }
       );
     });
-  }, []);
+  }, [location.latitude, location.longitude]);
 
   // Attempt to restore location from localStorage on mount
   useEffect(() => {

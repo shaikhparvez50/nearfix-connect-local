@@ -15,6 +15,11 @@ export const LocationDisplay = ({ className = "" }: LocationDisplayProps) => {
     return null;
   }
   
+  const handleUpdateLocation = () => {
+    // Force reload when user explicitly clicks update
+    detectLocation(true);
+  };
+  
   return (
     <div className={`flex flex-wrap items-center text-xs md:text-sm text-nearfix-600 ${className}`}>
       <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
@@ -24,7 +29,7 @@ export const LocationDisplay = ({ className = "" }: LocationDisplayProps) => {
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={detectLocation} 
+        onClick={handleUpdateLocation} 
         className="h-6 md:h-7 text-xs p-1"
         disabled={loading}
       >

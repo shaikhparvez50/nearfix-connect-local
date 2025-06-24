@@ -17,12 +17,13 @@ export const LocationButton = ({
   variant = "outline",
   onLocationDetected 
 }: LocationButtonProps) => {
-  const { detectLocation, loading } = useLocation();
+  const { detectLocation, loading, latitude, longitude } = useLocation();
   const isMobile = useIsMobile();
   
   const handleDetectLocation = async () => {
     try {
-      const success = await detectLocation();
+      // Pass true to force reload if user specifically clicks the button
+      const success = await detectLocation(true);
       if (onLocationDetected) {
         onLocationDetected(success);
       }
@@ -33,6 +34,9 @@ export const LocationButton = ({
       }
     }
   };
+  
+  // If location already exists, show update button instead
+  const hasLocation = latitude && longitude;
   
   return (
     <Button 
@@ -49,9 +53,14 @@ export const LocationButton = ({
         </>
       ) : (
         <>
-          {variant === "outline" ? <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" /> : 
-                                  <Navigation className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />}
-          {isMobile ? "Location" : "Detect Location"}
+          {variant === "outline" || hasLocation ? 
+            <Navigation className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" /> : 
+            <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+          }
+          {isMobile ? 
+            (hasLocation ? "Update" : "Location") : 
+            (hasLocation ? "Update Location" : "Detect Location")
+          }
         </>
       )}
     </Button>
