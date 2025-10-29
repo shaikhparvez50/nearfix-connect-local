@@ -129,17 +129,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, metadata: { name: string; role?: string }) => {
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
+        emailRedirectTo: redirectUrl,
       },
     });
 
     if (error) {
       throw error;
     }
+
+    // If user was created successfully, they'll be auto-logged in
+    // The onAuthStateChange listener will handle the redirect
   };
 
   const signOut = async () => {

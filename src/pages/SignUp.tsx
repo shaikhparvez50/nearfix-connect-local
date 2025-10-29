@@ -15,7 +15,6 @@ const SignUp = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
     role: "buyer" as "buyer" | "seller"
   });
   
@@ -48,15 +47,6 @@ const SignUp = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Passwords do not match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
       await signUp(formData.email, formData.password, {
         name: formData.name,
@@ -65,16 +55,25 @@ const SignUp = () => {
       
       toast({
         title: "Account created successfully!",
-        description: `Welcome to NearFix as a ${formData.role}. You can now sign in.`,
+        description: `Welcome to NearFix as a ${formData.role}!`,
       });
       
-      navigate("/signin");
+      // User will be automatically redirected to dashboard by AuthContext
     } catch (err: any) {
-      toast({
-        title: "Registration failed",
-        description: err.message,
-        variant: "destructive",
-      });
+      // Handle user already exists error
+      if (err.message?.includes("already registered") || err.message?.includes("User already registered")) {
+        toast({
+          title: "Account exists",
+          description: "Please sign in with your existing account.",
+        });
+        navigate("/signin");
+      } else {
+        toast({
+          title: "Registration failed",
+          description: err.message,
+          variant: "destructive",
+        });
+      }
     }
   };
   
@@ -150,22 +149,6 @@ const SignUp = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    className="pl-10"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                </div>
-              </div>
               
               <div className="space-y-2">
                 <Label>I want to join NearFix as:</Label>
